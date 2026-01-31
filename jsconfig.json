@@ -1,9 +1,47 @@
 {
   "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "checkJs": true,
     "paths": {
       "@/*": ["./*"]
-    },
-    "jsx": "react-jsx",
-    "checkJs": true
-  }
+    }
+   
+  },
+  "exclude": ["node_modules", ".next"]
 }
+
+// Keep previous settings just in case:
+// author's:
+// {
+//   "compilerOptions": {
+//     "paths": {
+//       "@/*": ["./*"]
+//     }
+//   }
+// }
+
+
+// {
+//   "compilerOptions": {
+//     "target": "ESNext",
+//     "module": "ESNext",
+//     "moduleResolution": "bundler",
+//     "allowJs": true,
+//     "checkJs": true,
+//     "jsx": "preserve",
+//     "noEmit": true
+//   }
+// }
+
+// {
+//   "compilerOptions": {
+//     "paths": {
+//       "@/*": ["./*"]
+//     },
+//     "jsx": "react-jsx",
+//     "checkJs": true
+//   }
+// }
