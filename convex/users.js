@@ -61,9 +61,8 @@ export const getCurrentUser = query({
          .unique();
 
         if (!user) {
-            throw new Error ("User not found")
-          }
-
+            return null;
+        }
         return user;
     }
 })
