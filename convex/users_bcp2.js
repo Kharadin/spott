@@ -56,27 +56,24 @@ export const store = mutation({
 //   ),
 });
 
-// 1. Create a helper function (not a query/ mutation)
-
-async function getAuthUser(ctx) {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) return null
-
- 
-  return await ctx.db
-    .query("users")
-    .withIndex("by_token", (q) =>
-      q.eq("tokenIdentifier", identity.tokenIdentifier)
-    )
-    .unique();
-}
-
-
-// 2. Simplify getCurrentUser to use the hepler 
+// creating a query:
 
 export const getCurrentUser = query({
     handler: async (ctx) => {
-      return await getAuthUser(ctx);
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) {
+            return null
+        }
+  
+        const user = await ctx.db
+         .query("users")
+         .withIndex("by_token", (q)=> q.eq("tokenIdentifier", identity.tokenIdentifier))
+         .unique();
+
+        if (!user) {
+            throw new Error ("User not found")
+        }
+        return user;
     }
 })
 
@@ -90,9 +87,7 @@ export const completeOnboarding = mutation ({
         interests: v.array(v.string()), // Min 3 categories
       }, 
       handler: async (ctx, args)=> {
-         const user = await getAuthUser(ctx);
-
-         if (!user) throw new Error("?Must be logged to complete onboarding?");
+        const user = await ctx.runQuery(internal.users.getCurrentUser);
 
         await ctx.db.patch(user._id, {
           hasCompletedOnboarding: true,

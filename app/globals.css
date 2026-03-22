@@ -54,13 +54,13 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
+  --primary: oklch(0.9 0 0);            /* Light grey background */
+   --primary-foreground: oklch(0.2 0 0);  /* Dark text */
+  --secondary: oklch(0.97 0 0 / 0.877);
+  --secondary-foreground: oklch(37.15% 0.00004 271.152);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
+  --accent: oklch(0.9 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
@@ -114,12 +114,65 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
-
 @layer base {
+  /* 1. Standard shadcn resets (KEEP THESE) */
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+ 
+}
+
+@layer components {
+ /* 2. Your Adaptive .form-adaptive Styles (APPEND THESE) */
+  .form-adaptive input, 
+  .form-adaptive button {
+    /* Use a variable that defaults to white, but changes in dark mode */
+    --adaptive-bg: rgba(255, 255, 255, 0.15);
+    --adaptive-text: #ffffff;
+    
+    background-color: var(--adaptive-bg) !important;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    /* color: var(--adaptive-text) ; */
+    color: var(--adaptive-text) !important;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+  }
+
+    /* Dark mode override */
+  .dark .form-adaptive input,
+  .dark .form-adaptive button {
+    --adaptive-bg: rgba(0, 0, 0, 0.2); /* Darker glass in dark mode */
+    --adaptive-text: #e2e8f0; /* Slight off-white for dark mode */
+     transition: all 0.2s ease;
+  }
+
+  /* Inputs use standard placeholder color */
+  .form-adaptive input {
+    color: #ffffff !important;
+    /* color: #ffffff; */
+  }
+  .form-adaptive input::placeholder {
+    color: rgba(255, 255, 255, 0.4) !important;
+  }
+
+  /* Buttons use data-active to toggle color */
+  .form-adaptive button[data-active="false"] {
+    color: rgba(255, 255, 255, 0.4) !important;
+  }
+  .form-adaptive button[data-active="true"] {
+    color: #ffffff !important;
+  }
+
+  /* Focus effect for all */
+  .form-adaptive input:focus, 
+  .form-adaptive button:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    background-color: rgba(255, 255, 255, 0.2) !important;
   }
 }

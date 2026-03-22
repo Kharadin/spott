@@ -1,4 +1,5 @@
 {
     "notebook.output.minimalErrorRendering": false,
-    "js/ts.implicitProjectConfig.checkJs": true
+    "js/ts.implicitProjectConfig.checkJs": true,
+    "editor.defaultColorDecorators": "always"
 }

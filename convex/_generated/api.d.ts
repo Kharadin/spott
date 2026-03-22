@@ -8,7 +8,13 @@
  * @module
  */
 
+import type * as events from "../events.js";
+import type * as explore from "../explore.js";
+import type * as search from "../search.js";
+import type * as seed from "../seed.js";
 import type * as users from "../users.js";
+import type * as users_bcp from "../users_bcp.js";
+import type * as users_bcp2 from "../users_bcp2.js";
 
 import type {
   ApiFromModules,
@@ -17,7 +23,13 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  events: typeof events;
+  explore: typeof explore;
+  search: typeof search;
+  seed: typeof seed;
   users: typeof users;
+  users_bcp: typeof users_bcp;
+  users_bcp2: typeof users_bcp2;
 }>;
 
 /**

@@ -38,11 +38,12 @@
 
       return () => {
         cancelled = true;
-      setUserId(null);
+        setUserId(null);
       };
       // Make sure the effect reruns if the user logs in with
       // a different identity
-    }, [isAuthenticated, storeUser, user?.id]);
+      }, [isAuthenticated, storeUser, user?.id]
+    );
     // Combine the local state with the state from context
     return {
       isLoading: isLoading || (isAuthenticated && userId === null),
