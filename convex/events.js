@@ -93,7 +93,8 @@ export const getMyEvents = query ({
         const events = await ctx.db
         .query("events")
         .withIndex("by_organizer", (q)=> q.eq("organizerId", user._id))
-        .order("desc");
+        .order("desc")
+        .collect();
         return events
     }
 })
@@ -133,3 +134,27 @@ export const deleteEvent = mutation ({
     }
 })
 
+export const syncAllRegistrationCounts = mutation({
+    args: {}, // No args needed to sync everything
+    handler: async (ctx) => {
+        // 1. Get all events
+        const events = await ctx.db.query("events").collect();
+
+        // 2. Map through each event to update its count
+        for (const event of events) {
+            const activeRegistrations = await ctx.db
+                .query("registrations")
+                .withIndex("by_event", (q) => q.eq("eventId", event._id))
+                .filter((q) => q.neq(q.field("status"), "cancelled"))
+                .collect();
+
+            // 3. Update the specific event with the real count
+            await ctx.db.patch(event._id, {
+                registrationCount: activeRegistrations.length,
+                // updatedAt: Date.now()
+            });
+        }
+
+        return { updated: events.length };
+    },
+});

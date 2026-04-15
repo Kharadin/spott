@@ -575,8 +575,8 @@ const coverImage = watch("coverImage");
         <Button 
           type="submit"
           disabled={isLoading}
-          className='w-full py-6 text-lg rounded-xl'
-          >
+          className='w-full py-6 text-lg '         
+         >
           {isLoading ? (
             <>
                <Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...

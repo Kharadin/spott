@@ -125,54 +125,118 @@
 
  
 }
-
 @layer components {
- /* 2. Your Adaptive .form-adaptive Styles (APPEND THESE) */
-  .form-adaptive input, 
-  .form-adaptive button {
-    /* Use a variable that defaults to white, but changes in dark mode */
-    --adaptive-bg: rgba(255, 255, 255, 0.15);
+  /* 1. BASE STATE: Stable, no-blur version */
+  .form-adaptive :is(input, button):not(.form-adaptive-exclusion *) {
+    --adaptive-bg: rgba(255, 255, 255, 0.12); /* Slightly cleaner base */
     --adaptive-text: #ffffff;
     
     background-color: var(--adaptive-bg) !important;
-    backdrop-filter: blur(4px);
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    /* color: var(--adaptive-text) ; */
     color: var(--adaptive-text) !important;
-    border-radius: 0.5rem;
-    transition: all 0.2s ease;
+    border-radius: 0.75rem !important;
+    transition: all 0.2s ease-in-out;
+    outline: none !important;
   }
 
-    /* Dark mode override */
-  .dark .form-adaptive input,
-  .dark .form-adaptive button {
-    --adaptive-bg: rgba(0, 0, 0, 0.2); /* Darker glass in dark mode */
-    --adaptive-text: #e2e8f0; /* Slight off-white for dark mode */
-     transition: all 0.2s ease;
+  /* 2. HOVER: Brightens the background and lifts */
+  .form-adaptive button:not(.form-adaptive-exclusion *):hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.20) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    transform: translateY(-2px);
+      /* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important; */
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25) !important;
   }
 
-  /* Inputs use standard placeholder color */
-  .form-adaptive input {
-    color: #ffffff !important;
-    /* color: #ffffff; */
-  }
-  .form-adaptive input::placeholder {
-    color: rgba(255, 255, 255, 0.4) !important;
-  }
-
-  /* Buttons use data-active to toggle color */
-  .form-adaptive button[data-active="false"] {
-    color: rgba(255, 255, 255, 0.4) !important;
-  }
-  .form-adaptive button[data-active="true"] {
-    color: #ffffff !important;
+  /* 3. CLICK (ACTIVE): Pushes down and darkens */
+  .form-adaptive button:not(.form-adaptive-exclusion *):active:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    transform: translateY(0);
+    transition-duration: 0.05s;
+    box-shadow: none !important;
   }
 
-  /* Focus effect for all */
-  .form-adaptive input:focus, 
-  .form-adaptive button:focus {
-    outline: none;
+  /* 4. FOCUS: Standard CSS replacement for Tailwind 'ring' */
+  .form-adaptive :is(input, button):not(.form-adaptive-exclusion *):focus-visible {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3) !important;
     border-color: rgba(255, 255, 255, 0.5) !important;
-    background-color: rgba(255, 255, 255, 0.2) !important;
   }
+
+  /* 5. INPUT PLACEHOLDERS */
+  .form-adaptive input:not(.form-adaptive-exclusion *)::placeholder {
+    color: rgba(255, 255, 255, 0.4) !important;
+  }
+
+  /* 6. LOADING/DISABLED */
+  .form-adaptive button:disabled:not(.form-adaptive-exclusion *) {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  /* 7. EXCLUSION ZONE */
+  .form-adaptive-exclusion {
+    color: var(--foreground);
+    background-color: var(--background);
+  }
+}
+
+
+/* Force the scanner container to have a visible area */
+#qr-reader {
+  width: 100% !important;
+  border: none !important; /* Removes the default library border if you want */
+}
+
+/* Ensure the video element inside scales correctly */
+#qr-reader video {
+  width: 100% !important;
+  height: auto !important;
+  border-radius: 8px;
+}
+/* 1. Force 'Select Camera' text to sit on top of the dropdown */
+#qr-reader__dashboard_section_camera_selection {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 8px !important;
+  color: var(--foreground) !important;
+  margin-bottom: 1rem !important;
+}
+
+/* 2. Style the dropdown box itself */
+#qr-reader select {
+  @apply w-full max-w-[300px]; /* Keeps it from stretching too wide on desktop */
+  color: var(--foreground) !important;
+  background-color: var(--background) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  padding: 8px !important;
+}
+
+/* 3. Add space around the Stop Scanning button */
+#qr-reader button {
+  @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2;
+  margin: 1.5rem 0 !important; /* Vertical space: 1.5rem top/bottom */
+  border: none !important;
+}
+
+/* 4. Ensure the instructions at the bottom have a little gap from the button */
+#qr-reader__dashboard_section {
+  padding-top: 0.5rem !important;
+  color: var(--foreground) !important;
+}
+
+/* 5. Fix Muted Text (Instructions/Status) */
+#qr-reader__header_message,
+#qr-reader__status_span {
+  color: var(--muted-foreground) !important;
+}
+
+/* 6. Toggle Link (Load File) */
+#qr-reader__dashboard_section_swaplink {
+  color: #8b5cf6 !important; 
+  text-decoration: underline !important;
+  margin-top: 1rem !important;
+  display: inline-block !important;
 }

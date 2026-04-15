@@ -1,5 +1,10 @@
 {
     "notebook.output.minimalErrorRendering": false,
     "js/ts.implicitProjectConfig.checkJs": true,
-    "editor.defaultColorDecorators": "always"
+    "editor.defaultColorDecorators": "always",
+    "editor.cursorHeight": 14,
+    "editor.cursorSmoothCaretAnimation": "on",
+    "editor.cursorWidth": 3,
+    "editor.cursorSurroundingLinesStyle": "all",
+    "editor.cursorSurroundingLines": 2
 }
