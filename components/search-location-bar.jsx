@@ -107,14 +107,14 @@ const SearchLocationBar = () => {
     <div className='flex items-center'>
         <div className='relative flex w-full' ref={searchRef}> 
             <div className='flex-1'>
-                <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground '/>
+                <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 '/>
                 <Input 
-                placeholder="Search for events" 
+                placeholder="Search by keyword" 
                 onFocus={()=> {
                     if (searchQuery.length >= 2) setShowSearchResults(true)
                 }}
                 onChange={handleSearchInput}
-                className="pl-10 w-full h-9 rounded-none rounded-l-md"/>
+                className="pl-10 w-full h-9 rounded-none rounded-l-md placeholder:text-slate-300"/>
             </div>
             {showSearchResults && (
                 <div className='absolute top-full mt-2 w-96 bg-background border rounded-lg shadow-lg z-50 max-h-[400px] overflow-y-auto' >
@@ -183,7 +183,9 @@ const SearchLocationBar = () => {
                 setSelectedState(value);
                 setSelectedCity("");
             }}>
-            <SelectTrigger  className="w-32 h-9 border-1-0 rounded-none">
+            <SelectTrigger  className="w-32 h-9 border-l-0 rounded-none data-[placeholder]:text-slate-300
+            [&>svg]:!text-slate-300 [&>svg]:!opacity-70
+            ">
                 <SelectValue placeholder="State" />
             </SelectTrigger>
             
@@ -208,9 +210,16 @@ const SearchLocationBar = () => {
         }}
 
         disabled={!selectedState}
+        
         >
         
-        <SelectTrigger  className="w-32 h-9 rounded-none rounded-r-md">
+        <SelectTrigger  className={`w-32 h-9 border-l-0  rounded-none  rounded-r-md disabled:opacity-100
+             [&>svg]:!opacity-70 
+         ${
+            !selectedState ? "data-[placeholder]:text-slate-400 opacity-50 [&>svg]:!text-slate-400 cursor-not-allowed" 
+            : "data-[placeholder]:text-slate-300 [&>svg]:text-slate-300"}`
+
+        }>
                 <SelectValue placeholder="City"/>
         </SelectTrigger>
 

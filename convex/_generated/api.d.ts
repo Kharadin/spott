@@ -9,6 +9,7 @@
  */
 
 import type * as dashboard from "../dashboard.js";
+import type * as datefix from "../datefix.js";
 import type * as events from "../events.js";
 import type * as explore from "../explore.js";
 import type * as registrations from "../registrations.js";
@@ -26,6 +27,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   dashboard: typeof dashboard;
+  datefix: typeof datefix;
   events: typeof events;
   explore: typeof explore;
   registrations: typeof registrations;

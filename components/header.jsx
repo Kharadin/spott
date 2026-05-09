@@ -45,7 +45,7 @@ const Header = () => {
           {/* search & location-  Desktop only  */}
           <div className='hidden md:flex flex-1 justify-center'>
 
-          <SearchLocationBar />
+            <SearchLocationBar />
           </div>
 
 

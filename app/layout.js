@@ -21,7 +21,7 @@ export default function RootLayout({ children }) {
 
           <ConvexClientProvider>
             <Header />   
-            <main className="relative min-h-screen container mx-auto pt-40 md:pt-32">
+            <main className="relative min-h-screen container mx-auto pt-38 md:pt-23">
                 {/* keep this */}
                 {/* relative: Allows absolute-positioned elements inside it to align to this main area. */}
                 {/* container- tailwind - limits the width The container class is "smart." It automatically adjusts as the screen gets smaller: 

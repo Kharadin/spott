@@ -23,12 +23,13 @@ import { CATEGORIES } from "@/lib/data";
 import Autoplay from "embla-carousel-autoplay";
 import EventCard from "@/components/event-card"
 import { Card, CardContent } from "@/components/ui/card";
+import { fr } from "date-fns/locale";
 
 export default function ExplorePage() {
   const router = useRouter();
-  const plugin = useRef(Autoplay({ delay: 2000, stopOnInteraction: true }));
+  const plugin = useRef(Autoplay({ delay: 7000, stopOnInteraction: false }));
 
-  // Fetch current user for location
+  // 1. Fetch user (let this run in background)
   const { data: currentUser } = useConvexQuery(api.users.getCurrentUser);
   console.log(currentUser);
   // Fetch events
@@ -41,7 +42,7 @@ export default function ExplorePage() {
   const { data: localEvents, isLoading: loadingLocal } = useConvexQuery(
     api.explore.getEventsByLocation,
     {
-      city: currentUser?.location?.city || "Gurugram",
+      city: currentUser?.location?.city || "Gurgaon",
       state: currentUser?.location?.state || "Haryana",
       limit: 4,
     }
@@ -78,40 +79,44 @@ export default function ExplorePage() {
 
 
   const handleViewLocalEvents = () => {
-    const city = currentUser?.location?.city || "Gurugram";
+    const city = currentUser?.location?.city || "Gurgaon";
     const state = currentUser?.location?.state || "Haryana";
     const slug = createLocationSlug(city, state);
     router.push(`/explore/${slug}`);
    };
 
    // Loading state
-   const isLoading = loadingFeatured || loadingLocal || loadingPopular
+  //  const isLoading = loadingFeatured || loadingLocal || loadingPopular
 
-   if (isLoading){
-    return <div className="min-h-screen flex items-center justify-center">
-      <Loader2 className="animate-spin w-8 h-8 text-purple-500" />
-    </div>
+  //  if (isLoading){
+  //   return <div className="min-h-screen flex items-center justify-center">
+  //     <Loader2 className="animate-spin w-8 h-8 text-purple-500" />
+  //   </div>
 
-   }
+  //  }
 
   return (
      <> 
-     <div className='pb-12 text-center'>
+     <div className='pb-6 text-center'>
 
-        <h1 className='text-5xl md:text-6xl font-bold mp-4'> Discover Events</h1>
-        <p className='text-ld text-muted-foreground max-w-3xl mx-auto'>Explore featured events, find what&apos;s happening locally, or browse events across Russia</p>
+      <h1 className='text-5xl md:text-6xl font-bold mp-4'> Есть куда пойти</h1>
+      <p className='text-ld mt-2 text-slate-300 max-w-4xl mx-auto'> Развивающие мероприятия повсюду. Посмотрите Рекомендуемые, посмотрите события в своем городе, поищите по категориям или в других городах</p>
      </div>
 
      {/* Featured Carousel */}
-
-     {featuredEvents?.length > 0 && (
+     {!featuredEvents ?  (
+        <div className="h-[400px] flex items-center justify-center">
+          <Loader2 className="animate-spin w-8 h-8 text-purple-500" />
+        </div>
+      ) : (
         <div className='mb-16'>
-
             <Carousel
             plugins={[plugin.current]}
+             opts = {{duration: 130, friction: 0.5, loop: true}}
             className="w-full"
             onMouseEnter={plugin.current.stop}
-            onMouseLeave={plugin.current.reset} opts={undefined} setApi={undefined}          >
+            onMouseLeave={()=> plugin.current.play()}      
+            setApi={undefined}  >
             <CarouselContent className={undefined}>
               {featuredEvents.map((event, index) => (
                 <CarouselItem key={event._id} className={undefined}>
@@ -172,34 +177,43 @@ export default function ExplorePage() {
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <CarouselPrevious className="left-4" />
-            <CarouselNext className="right-4" />
+            <CarouselPrevious className="left-2" />
+            <CarouselNext className="right-2" />
           </Carousel>
         </div>
          
       )}
      {/* Local Events */}
-      {localEvents && localEvents.length > 0 && (
+      { ! localEvents ? (
+        <div className="h-40 flex items-center justify-center">Finding local events ... </div>
+      ) :  (
         <div className='mb-16 '>
-          <div className="flex items-center  justify-between mb-6">
-            <div>
-              <h2 className="text-3xl font-bold mb-1">
-                Events Near You
-              </h2>
-              <p className="text-muted-foreground">
-                Happening in {currentUser?.location?.city || "your area"}
-              </p>
-
-            </div>
-            <Button
-              variant="outline"
-             className="gap-2 bg-slate-500 text-white dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-colors"
-
-              onClick={handleViewLocalEvents} 
-            >
-              View All <ArrowRight className="w-4 h-4" />
-            </Button>
-          </div>
+           {/* the whole div for LocalEvents title, subitle, comment and view all button */}
+          <div className="mb-4"> 
+            {/* first comes the title, taking the whole line */}
+            <h2 className="text-3xl font-bold mb-1">
+              Мероприятия по локации
+            </h2>
+             {/* then the div uniting the subtitle  And the view all button (to go below on small screens, and keep right)*/}
+              <div className="flex items-center  justify-between ">
+             
+                  <p className=" text-muted-foreground " >
+                   {`Намечаются в:  `} 
+                    <span className="font-semibold text-slate-200">
+                      {currentUser?.location?.city || "Краснодарский Край, Сочи"}
+                    </span>
+                  </p>  
+                 
+                <Button
+                  variant="outline"
+                  className="gap-2 bg-slate-500 text-white dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-colors"
+                  onClick={handleViewLocalEvents} 
+                 >
+                  Смотреть все<ArrowRight className="w-4 h-4" />
+                </Button> 
+              </div>
+              <p className=" mt-2 text-xs text-slate-400 ">Выберите свою область и город на панели наверху</p>
+          </div>  
           <div className= "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {localEvents.map((event)=>(
               <EventCard 
@@ -214,15 +228,16 @@ export default function ExplorePage() {
       )}
       {/* Browse by category */}
       <div className="mb-16">
-        <h2 className="text-3xl font-bold mb-6">Browse by Category</h2>
+        <h2 className="text-3xl font-bold mb-6">Смотреть по категориям</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {categoriesWithCounts.map((category)=> (
             <Card
             key={category.id}
-            className="py-2 group cursor-pointer hover:whadow-lg transition-all hover:border-purple-500/50" 
+            className="py-2 group cursor-pointer hover:shadow-lg transition-all hover:border-purple-500/50
+            flex flex-row items-center " 
             onClick={() => handleCategoryClick(category.id)}
             >
-              <CardContent className="p-3 sm:p-6 flex items-center  gap-3">
+              <CardContent className="p-3 sm:p-6 flex items-center gap-2 w-full">
                 <div className="text-3xl sm:text-4xl">{category.icon} </div>
 
                 <div className="flex-1 min-w-0">
@@ -241,7 +256,11 @@ export default function ExplorePage() {
       </div>
 
       {/* Popular events across Rus */}
-      {popularEvents && popularEvents.length > 0 && (
+      {!popularEvents ?  (  
+        <div className="h-40 flex items-center justify-center">Finding popular events ... </div>
+
+        ):
+        (
         <div className="mb-16"> 
           <div className="mb-6">
             <h2 className='text-3xl font-bold mb-1'>Популярные события</h2>
