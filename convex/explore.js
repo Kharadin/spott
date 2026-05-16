@@ -10,16 +10,19 @@ export const getFeaturedEvents = query( {
 
         const events = await ctx.db
         .query("events")
-        .withIndex("by_start_date")
-        .filter((q) => q.gte(q.field("startDate"), now))
-        .order("desc")
+        .withIndex("by_featured_start_date",
+             (q) => q.eq("featured", true).gte("startDate", now)
+        )
         .collect();
+        
 
-        // Sort by registration count
+        // (Sort by registration count), Now sort by featuredOrder
         const featured = events
-            .sort ((a, b) => b.registrationCount - a.registrationCount)
-            .slice(0, args.limit ?? 3)
-
+            .sort((a, b) => b.featuredOrder - a.featuredOrder)
+            // .slice(0, 7)
+                // .sort ((a, b) => b.registrationCount - a.registrationCount)
+            .slice(0, args.limit ?? 5)
+        
         return featured
     }
 });
@@ -34,24 +37,39 @@ export const getEventsByLocation= query ({
     handler: async (ctx, args)=>{
         const now = Date.now();
 
-          let events = await ctx.db
-        .query("events")
-        .withIndex("by_start_date")
-        .filter((q) => q.gte(q.field("startDate"), now))
-        .collect();
-
-        // Filter by city or state
         if (args.city){
-            events = events.filter(
-                (e) => e.city.toLowerCase() === args.city.toLowerCase()
-            )
-        } else if (args.state) {
-            events = events.filter (
-                (e) => e.state.toLowerCase() === args.state.toLowerCase()
+            
+            let events = await ctx.db
+            .query("events")
+            .withIndex("by_city_published_start_date", (q)=> q
+            .eq("city", args.city)
+            .eq("published", true)
+            .gte("startDate", now))
+            
+            .collect();
 
-            )
+            // and we would need additionally to filter by state (in case same name of city across states)
+            if (args.state){
+                events = events.filter(
+                    (e) => e.state.toLowerCase() === args.state.toLowerCase()
+                )
+            }
+             return events.slice(0, args.limit ?? 4)
         }
-        return events.slice(0, args.limit ?? 4)
+
+        // in other case (only state) then we search only by state
+        if (!args.city){
+            let events = await ctx.db
+            .query("events")
+            .withIndex("by_state_published_start_date", (q)=> q
+            .eq("state", args.state)
+            .eq("published", true)
+            .gte("startDate", now))
+            .collect();
+
+            return events.slice(0, args.limit ?? 4)
+        }
+       
     },
 
 
@@ -64,17 +82,17 @@ export const getPopularEvents = query ({
     },
     handler: async (ctx, args) => {
         const now = Date.now();
+        const resultLimit = args.limit ?? 20
 
-        const events = await ctx.db
+        const upcomingEvents  = await ctx.db
         .query("events")
-        .withIndex("by_start_date")
-        .filter((q) => q.gte(q.field("startDate"), now))
+        .withIndex("by_published_start_date", (q) => q.eq("published", true).gte("startDate", now))
         .collect();
 
-        // Sort by registration count
-        const popular = events
+        // Sort by registration count in memory and slice
+        const popular = upcomingEvents 
             .sort ((a, b) => b.registrationCount - a.registrationCount)
-            .slice(0, args.limit ?? 6)
+            .slice(0, resultLimit)
 
         return popular
     }
@@ -89,13 +107,18 @@ export const getEventsByCategory = query ({
     handler: async (ctx, args) => {
         const now = Date.now();
 
+
+        // The database scans directly to the category -> published -> upcoming range
         const events = await ctx.db
         .query("events")
-        .withIndex("by_category", (q) => q.eq("category", args.category))
-        .filter((q) => q.gte(q.field("startDate"), now))
+        .withIndex("by_category_published_start_date", (q) => q
+            .eq("category", args.category)
+            .eq("published", true)
+            .gte("startDate", now)
+          )   
         .collect();
 
-        return events.slice(0, args.limit ?? 12);
+        return events.slice(0, args.limit ?? 20);
     }
 })
 
@@ -106,7 +129,6 @@ export const getCategoryCounts = query ({
         const events = await ctx.db
         .query("events")
         .withIndex("by_start_date")
-        .filter((q) => q.gte(q.field("startDate"), now))
         .collect();
         // lets count events by category
         const counts = {};

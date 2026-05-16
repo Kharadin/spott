@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/incompatible-library */
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,7 +11,7 @@ import { format } from "date-fns";
 import { State, City } from "country-state-city";
 import { CalendarIcon, Crown, Loader2, Sparkles } from "lucide-react";
 import { useConvexMutation, useConvexQuery } from "@/hooks/use-convex-query";
-import { api } from "@/convex/_generated/api";
+import { api } from "../../../convex/_generated/api";
 import { toast } from "sonner";
 import { useAuth } from "@clerk/nextjs";
 
@@ -37,12 +37,11 @@ import {
 
 // import UnsplashImagePicker from "@/components/unsplash-image-picker";
 // import AIEventCreator from "./_components/ai-event-creator";
-import UpgradeModal from "@/components/upgrade-modal";
+import PricingModal from "@/components/pricing-modal";
 import { CATEGORIES } from "@/lib/data";
 import Image from "next/image";
 import  UnsplashImagePicker  from "@/components/unsplash-image-picker";
-import { set } from "lodash";
-import { title } from "process";
+
 import { AiEventCreator } from "./_components/ai-event-creator";
 
 
@@ -77,26 +76,42 @@ const CreateEvent = () => {
   const router = useRouter();
 
   const [showImagePicker, setShowImagePicker] = useState(false);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showPricingModal, setShowPricingModal] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState('limit');// limit or color
 
   // check if user has pro plan
-  const { has } = useAuth();
-  const hasPro = has?.({ plan: "pro" });
+  // const { has } = useAuth();
+  // const hasPro = has?.({ plan: "pro" });
 
   const { data: currentUser } = useConvexQuery(api.users.getCurrentUser);
+
+  const [animatedPlaceholder, setAnimatedPlaceholder] = useState("");
+  // Safely default createFormBlocked to false if data is still loading/undefined
+  const { data: createFormBlocked = false } = useConvexQuery(api.events.checkLimitForCreateEvent);
+
+  useEffect(() => {
+      // If data is still loading or user is not blocked, reset placeholder immediately
+    if (!createFormBlocked) {
+      setAnimatedPlaceholder("Название мероприятия")
+      return
+    }
+    const baseText = "У вас уже есть 2 непроверенных или неоплаченных мероприятия. Дальнейшее создание- после оплаты.    .    .   "
+    let index =0;
+    // Loops every 120 ms to shift the characters left, creating the text runner ticker 
+    const tickerInterval = setInterval(() => {
+      const movingText = baseText.substring(index) + baseText.substring(0, index)
+      setAnimatedPlaceholder(movingText)
+      index  = (index + 1 ) % (baseText.length)
+      
+    }, 120);
+    return ()=> clearInterval(tickerInterval)
+  }, [createFormBlocked])
 
   const { mutate: createEvent, isLoading } = useConvexMutation(
     api.events.createEvent
 
   );
-  // register- responsivle for connecting fields of our form with react hook form
-  // handleSubmit- responsible for handling form submission
-  // watch - responsible for watching form values, if value changes, it will update
-  //  setVaue - for dynamically updating form values
-  // control - for controlling non-native elements like shadcn, not a native html element
-  // we will use it to connect to react hook form
-  // formState{errors} (there are more things)- for errors if rules are not followed accrording to our schema
+
   
   const { register,
        handleSubmit,
@@ -143,19 +158,20 @@ const coverImage = watch("coverImage");
     return City.getCitiesOfState("IN", st.isoCode);
   }, [selectedState, indianStates]);
   
-  // Color presets - show all for Pro, only default for Free
+  // Color presets - show all for Pro, only default for Free (now all)
   const colorPresets = [
-    "#1e3a8a", // Default color (always available)
-    ...(hasPro ? ["#4c1d95", "#007b2bff", "#92400e", "#017d6fff", "#831843"] : []),
+    "#1e3a8a", 
+    ...(true ? ["#4c1d95", "#007b2bff", "#92400e", "#017d6fff", "#831843"] : []),
   ];
+ 
 
   const handleColorClick = (color)=> {
     // if not default color and user doesn't have Pro,
-    if (color !== "#1e3a8a" && !hasPro) {
-      setUpgradeReason('color');
-      setShowUpgradeModal(true);
-      return
-    }
+    // if (color !== "#1e3a8a" && !hasPro) {
+    //   setUpgradeReason('color');
+    //   setShowPricingModal(true);
+    //   return
+    // }
     setValue("themeColor", color);
   }
   const combineDateTime = (date, time) => {
@@ -179,17 +195,7 @@ const coverImage = watch("coverImage");
           return;
         }
 
-        // check event limit for free users
-        if (!hasPro && currentUser?.freeEventsCreated >= 1) {
-          setUpgradeReason("limit");
-          setShowUpgradeModal(true);
-          return;
-        }
-
-        if (data.themColor !== "#1e3a8a" && !hasPro) {
-            setUpgradeReason("color");
-          setShowUpgradeModal(true);
-        }
+    
 
         await createEvent({
           title: data.title,
@@ -239,19 +245,29 @@ const coverImage = watch("coverImage");
       <div className="max-w-6xl mx-auto flex flex-col gap-5 md:flex-row justify-between mb-10">
         <div>
           <h1 className="text-4xl font-bold">Create Event</h1>
-          {!hasPro && (
+          {/* {!hasPro && (
             <p className= 'text-sm text-muted-foreground mt-2'>
               Free: {currentUser?.freeEventsCreated ||0}/ 1 events created  
             </p>
-          )}
+          )} */}
         </div>
 
+
         {/* AI event creator */}
-          {/* <div className="form-adaptive" > --deleted*/}
-          <AiEventCreator  onEventGenerated ={handleAIGenerate}/>
-          {/* </div> */}
+          <div className="form-adaptive flex flex-col md:flex-row gap-2" >
+            <Button className="gap-2"
+                onClick={()=> {
+                  setUpgradeReason('creating');
+                  setShowPricingModal(true)
+                }}
+            
+            >Что почём</Button>
+            {/* <AiEventCreator  onEventGenerated ={handleAIGenerate}/> */}
+          </div>  
         
       </div>
+    <fieldset disabled={createFormBlocked}> 
+
       <div className="max-w-6xl mx-auto grid md:grid-cols-[320px_1fr] gap-10">
         {/* LEFT: Image + theme */}
         <div className="space-y-6">
@@ -260,67 +276,50 @@ const coverImage = watch("coverImage");
           >
             {coverImage ? (
               <Image 
-                src={coverImage} 
-                className="w-full h-full object-cover"
-                width={500} // adjust to your needs
-                height={500} // adjust to your needs
-                priority
-                alt="Cover">
+              src={coverImage} 
+              className="w-full h-full object-cover"
+              width={500} // adjust to your needs
+              height={500} // adjust to your needs
+              priority
+              alt="Cover">
 
                 </Image>
             ): (<span>Click to add cover image</span>
-             
+              
             )}
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-sm">Theme color</label>
-              {!hasPro && (
+              {/* {!hasPro && (
                 <Badge variant="secondary" className="text-xs gap-1">
-                  <Crown className="w-3 h-3" />
-                  Pro
+                <Crown className="w-3 h-3" />
+                Pro
                 </Badge>
-              )}
+                )} */}
             </div>
             
             <div className="flex gap-2 flex-wrap">
               {colorPresets.map((color) => (
                 <button key={color} type='button'
                   className={`w-10 h-10 rounded-full border-2 transition-all 
-                  ${!hasPro && color !== '#1e3a8a'?
-                    "opacity-40 cursor-not-allowed"
-                    : "hover-scale-110"  
+                  ${ "hover-scale-110"  
                   }`}
                   
                   style={{backgroundColor: color,
-                        borderColor: themeColor === color? "white" : "transparent"
+                    borderColor: themeColor === color? "white" : "transparent"
                   }}
-                onClick={()=> handleColorClick(color)}
-                title={!hasPro && color !== '#1e3a8a'? "Upgrade to Pro" : null }
+                  onClick={()=> handleColorClick(color)}
+                // title={!hasPro && color !== '#1e3a8a'? "Upgrade to Pro" : null }
                 
                 />       
               ))}
-              {!hasPro && (
-                <button 
-                type= "button"
-                onClick={()=> {
-                  setUpgradeReason('color');
-                  setShowUpgradeModal(true)
-                }}
-                className="w-10 h-10 rounded-full border-2 border-dashed border-purple-300
-                flex items-center justify-center hover:border-purple-500 transition-colors"
-                title='Unlock more coloers with Pro'
-                >
-                  <Sparkles className="w-5 h-5 text-purple-400" />
-                </button>
-              )}
+              {/* {!hasPro && (
+              
+              )} */}
             </div>
-            {!hasPro && (
-              <p className="text-xs text-muted-foreground">
-                Upgrade to Pro to unlock custom theme colors
-              </p>
-            )}
+           
 
 
           </div>     
@@ -328,13 +327,23 @@ const coverImage = watch("coverImage");
 
           
         {/* RIGHT:  Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 form-adaptive">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 form-adaptive disabled={createFormBlocked}">
            {/* Title */}
-          <div>
+          <div className="-mt-1.5 space-y-2">
+            <div className="flex items-center justify-between  min-h-[20px]" >
+                {createFormBlocked ?  (
+                    <span className="text-sm font-semibold text-amber-400 bg-amber-500/10 px-3">
+                         ⚠️ {animatedPlaceholder}
+                    </span>) :
+                     (<Label className="text-sm mb-2">Название</Label>)
+                }
+            </div>
             <Input
               {...register("title")}
-              placeholder="Event Name"
-              className="text-3xl font-semibold focus-visible:ring-0"
+              placeholder={animatedPlaceholder}
+                     className="text-l font-semibold focus-visible:ring-0 disabled:opacity-100 [&_span]:text-green-400 [&_div]:text-green-400"
+
+
             />
             {errors.title && (
               <p className="text-sm text-red-400 mt-1">
@@ -572,6 +581,7 @@ const coverImage = watch("coverImage");
             </p>
           )}
         </div>
+        <p className="mt-1 mb-1">После создания ивента следует его рассмотрение/согласование в течение 2-24х часов. Вам придет уведомление на почту. Далее следует оплата и публикация.</p>
         <Button 
           type="submit"
           disabled={isLoading}
@@ -599,11 +609,12 @@ const coverImage = watch("coverImage");
       />
     ) }
 
+    </fieldset>
 
     {/* Upgrade modal */}
-    <UpgradeModal 
-      isOpen = {showUpgradeModal}
-      onClose={() => setShowUpgradeModal(false)}  
+    <PricingModal 
+      isOpen = {showPricingModal}
+      onClose={() => setShowPricingModal(false)}  
       trigger={upgradeReason}
     />
           

@@ -6,5 +6,7 @@
     "editor.cursorSmoothCaretAnimation": "on",
     "editor.cursorWidth": 3,
     "editor.cursorSurroundingLinesStyle": "all",
-    "editor.cursorSurroundingLines": 2
+    "editor.cursorSurroundingLines": 2,
+    "editor.parameterHints.enabled": false,
+    "editor.parameterHints.cycle": false
 }

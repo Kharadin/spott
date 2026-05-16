@@ -3,6 +3,60 @@ import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
+
+// ==========================================
+// 1. REUSABLE DB LOGIC (PURE JAVASCRIPT HELPER)
+// ==========================================
+// Fast, local database reader. No nested query or auth overhead.
+async function  checkUnreviewedOrUnpublised  (ctx, userId) {
+        try {            
+            // Fetch up to 3 unreviewed events.
+            const unreviewedEvents = await ctx.db 
+            .query("events")
+            .withIndex("by_organizer_reviewed_published", (q)=>
+                q.eq("organizerId", userId).eq("reviewed", false)
+            )
+            .take(3)
+
+            // now, up to 3 unpublshed events
+            const unpublishedEvents = await ctx.db 
+                .query("events")
+                .withIndex('by_organizer_reviewed_published', (q)=>
+                q.eq("organizerId", userId).eq("reviewed", true).eq("published", false)
+                )
+                .take(3)
+            
+        // simple addition check, safe because records never overlap
+        console.log(unreviewedEvents, unpublishedEvents)
+        console.log(unreviewedEvents.length + unpublishedEvents.length >= 2)
+        // return  true
+        return  unreviewedEvents.length + unpublishedEvents.length >= 2 
+        
+        
+        } catch (error) {
+            console.log(error)
+        }  
+    
+}
+// 2. STANDALONE QUERY (FOR FRONTEND UI)
+// ==========================================
+export const checkLimitForCreateEvent = query ({
+    args: {},
+    handler: async (ctx) => {
+        try {
+            const user = await ctx.runQuery(internal.users.getCurrentUser);
+            if (!user) throw new Error("Пользователь не авторизован");
+            
+            // Call the internal helper function    
+            return await checkUnreviewedOrUnpublised(ctx, user._id)
+        } catch (error) {
+              // Safely pass only the text message to keep Convex types stable
+                throw new Error(error instanceof Error ? error.message : String(error));
+                // throw new Error(error.message );
+        }
+    }
+})
+
 export const createEvent = mutation ({
   args: {
     title: v.string(),
@@ -27,21 +81,15 @@ export const createEvent = mutation ({
 
     }, 
     handler: async (ctx, args) => {
+      
         try {
             const user = await ctx.runQuery(internal.users.getCurrentUser);
+            if (!user) throw new Error("Пользователь не авторизован");
+              
+            // Reuse the local JS function directly 
+            const isBlocked = await checkUnreviewedOrUnpublised(ctx, user._id);
+            if (isBlocked) throw new Error("У вас уже есть 2 непроверенных/неоплаченных мероприятия.");
 
-                // Server-side check: verify if the user hasn't expended the limit for free events
-                // if (!args.hasPro && user.freeEventsCreated >= 1) {
-                //     throw new Error ("You have reached your limit for free events. Upgrade to Pro to create more events.")
-                // }
-            // const defaultColor = "#1e3a8a";
-
-            // if (!args.hasPro && args.themeColor && args.themeColor !== defaultColor) {
-            //     throw new Error (
-            //         "Custom theme colors are a Pro feature. Please upgrade to Pro."
-            //     )
-
-            // }
             const themeColor = args.themeColor
             // const themeColor = args.hasPro ? args.themeColor : defaultColor;
             // GENERATE SLUG from title
@@ -59,6 +107,9 @@ export const createEvent = mutation ({
             registrationCount: 0,
             createdAt: Date.now(),
             updatedAt: Date.now(),
+            reviewed: false,
+            published: false,
+            cancelled: false
 
         });
        // Update users's free event count
@@ -124,6 +175,8 @@ export const deleteEvent = mutation ({
         }
         // Delete the event
         await ctx.db.delete(args.eventId);
+
+        // If user has some freeEventsCreated, then decrease their num by 1 (we did not even check it's a free event that's deleted, but Ok, it's learing material)
         if (user.freeEventsCreated > 0) {
             await ctx.db.patch(user._id, {
                 freeEventsCreated: user.freeEventsCreated - 1   

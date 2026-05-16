@@ -112,17 +112,30 @@ export default function EventCard({
         </div>
         {/* // Event details:date, location, people */}
         <div className="space-y-2 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            <span>{format(event.startDate, "PPP")}</span>
+          <div className="flex justify-between" >
+            <div className="flex items-center gap-2 ">
+
+                <Calendar className="w-4 h-4" />
+                <span>{format(event.startDate, "PPP")}</span>
+            </div>
+            <div> {!event.reviewed &&
+               ( <span>На рассмотрении</span>)
+             }
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4" />
-            <span className="line-clamp-1">
-              {event.locationType === "online"
-                ? "Online Event"
-                : `${event.city}, ${event.state || event.country}`}
-            </span>
+          <div className="flex justify-between">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4" />
+              <span className="line-clamp-1">
+                {event.locationType === "online"
+                  ? "Online Event"
+                  : `${event.city}, ${event.state || event.country}`}
+              </span>
+            </div>
+              <div> {!event.published &&
+               ( <span>Неопубликован</span>)
+             }
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4" />

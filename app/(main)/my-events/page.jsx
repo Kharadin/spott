@@ -99,7 +99,7 @@ const MyEvents = () => {
                 <div className="max-w-md mx-auto space-y-4">
                     <div className="text-6xl mb-4">🎟️</div>
                     <h2 className="text-2xl font-semibold">Нет созданных вами мероприятий</h2>
-                    <p className="text-muted-foreground">Создайте мероприятие и начните пригласите участников</p>
+                    <p className="text-muted-foreground">Создайте мероприятие и приглашайте участников</p>
                     <Button asChild className="gap-2">
                         <Link href="/create-event">     
                            <Plus className="w-4 h-4" />

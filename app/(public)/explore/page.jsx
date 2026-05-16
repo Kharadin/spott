@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, MapPin, Users, ArrowRight, Loader2 } from "lucide-react";
 import { format } from "date-fns";
@@ -24,10 +25,17 @@ import Autoplay from "embla-carousel-autoplay";
 import EventCard from "@/components/event-card"
 import { Card, CardContent } from "@/components/ui/card";
 import { fr } from "date-fns/locale";
+import { fa } from "zod/v4/locales";
 
 export default function ExplorePage() {
   const router = useRouter();
-  const plugin = useRef(Autoplay({ delay: 7000, stopOnInteraction: false }));
+  const plugin = useRef(Autoplay({
+     delay: 4000, stopOnInteraction: false,
+    
+    jump: false,
+       
+    stopOnMouseEnter: true, // Native C++ browser layer boundary
+    }));
 
   // 1. Fetch user (let this run in background)
   const { data: currentUser } = useConvexQuery(api.users.getCurrentUser);
@@ -35,7 +43,7 @@ export default function ExplorePage() {
   // Fetch events
   const { data: featuredEvents, isLoading: loadingFeatured } = useConvexQuery(
     api.explore.getFeaturedEvents,
-    { limit: 3 }
+    { limit: 7 }
   );
   // console.log(featuredEvents);
 
@@ -52,7 +60,7 @@ export default function ExplorePage() {
 
   const { data: popularEvents, isLoading: loadingPopular } = useConvexQuery(
     api.explore.getPopularEvents,
-    { limit: 6 }
+    { limit: 16 }
   );
 
   const { data: categoryCounts } = useConvexQuery(
@@ -61,12 +69,12 @@ export default function ExplorePage() {
   //  categoryCounts will be initially undefined, so optional chaining operator ?., 
   // count: will be initially undefined until data arrives.
 
-  const categoriesWithCounts = CATEGORIES.map((cat) => {  // maybe try it with useMemo later
-    return {   // explicit return
+ const categoriesWithCounts = useMemo(() => {
+    return CATEGORIES.map((cat) => ({
       ...cat,
       count: categoryCounts?.[cat.id] || 0
-    }
-  })
+    }));
+  }, [categoryCounts]);
 
 
   const handleEventClick = (slug) => {
@@ -94,6 +102,7 @@ export default function ExplorePage() {
   //   </div>
 
   //  }
+  
 
   return (
      <> 
@@ -112,12 +121,12 @@ export default function ExplorePage() {
         <div className='mb-16'>
             <Carousel
             plugins={[plugin.current]}
-             opts = {{duration: 130, friction: 0.5, loop: true}}
+             opts = {{duration: 180, friction: 0.82, loop: true}}
             className="w-full"
             onMouseEnter={plugin.current.stop}
             onMouseLeave={()=> plugin.current.play()}      
             setApi={undefined}  >
-            <CarouselContent className={undefined}>
+            <CarouselContent className="transform-gpu will-change-transform">
               {featuredEvents.map((event, index) => (
                 <CarouselItem key={event._id} className={undefined}>
                   <div
@@ -125,11 +134,16 @@ export default function ExplorePage() {
                     onClick={() => handleEventClick(event.slug)}
                   >
                     {event.coverImage ? (
+                      
                       <Image
                         src={event.coverImage}
                         alt={event.title}
                         fill
-                        className="object-cover"
+                        className="w-full h-full object-cover"
+                        style={{
+                            objectPosition: `${event.picXposition !== undefined ? event.picXposition : 50}%  
+                                              ${event.picYposition !==undefined ? event.picYposition : 50}%`
+                        }}
                         priority = {index === 0}
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         //  unoptimized

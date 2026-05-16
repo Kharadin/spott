@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { PricingTable } from "@clerk/nextjs";
 
 
-export default function UpgradeModal ({isOpen, onClose, trigger = 'limit'})  {
+export default function PricingModal ({isOpen, onClose, trigger = 'limit'})  {
   return (
      <Dialog open={isOpen} onOpenChange={onClose}>
     

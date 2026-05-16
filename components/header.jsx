@@ -12,13 +12,14 @@ import OnboardingModal from "./onboarding-modal";
 import SearchLocationBar from "./search-location-bar";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import UpgradeModal from "./upgrade-modal";
+import PricingModal from "./pricing-modal";
 import { Badge } from "./ui/badge";
+import { set } from "lodash";
 
 const Header = () => {
   const { isLoading } = useStoreUser();
 
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [showPricingModal, setShowPricingModal] = useState(false)
 
   const {showOnboarding, handleOnboardingComplete, handleOnboardingSkip, } = useOnboarding();
 
@@ -55,7 +56,7 @@ const Header = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowUpgradeModal(true)}
+                onClick={() => setShowPricingModal(true)}
               >
                 Pricing
               </Button>
@@ -129,9 +130,9 @@ const Header = () => {
          onClose={handleOnboardingSkip}
          onComplete={handleOnboardingComplete}
       />
-      <UpgradeModal 
-        isOpen = {showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}  
+      <PricingModal 
+        isOpen = {showPricingModal}
+        onClose={() => setShowPricingModal(false)}  
         trigger='header'
       />
       

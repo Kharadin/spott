@@ -57,14 +57,14 @@ export function AiEventCreator({onEventGenerated}) {
         <DialogTrigger asChild>
         {/* Keep form-adaptive here because this button lives ON the colored form */}
         <Button className="gap-2" >
-           <Sparkles className="w-4 h-4" />Generate with AI
+           <Sparkles className="w-4 h-4" />Применить ИИ
           </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-sm form-adaptive-exclusion">
           <DialogHeader>
-             <DialogTitle >AI Event Creator</DialogTitle>
+             <DialogTitle >ИИ-Генератор данных мероприятия</DialogTitle>
               <DialogDescription>
-              Describe your event in a few words, and we'll generate an event for you
+              Опишите мероприятия в общих чертах, ИИ сгенерует данные полей
             </DialogDescription>
           </DialogHeader>
 
@@ -77,7 +77,7 @@ export function AiEventCreator({onEventGenerated}) {
                     <Textarea
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
-                        placeholder="Example: A Chigong conference in San-Francisco, California, 3 DAYS starting on the 22nd of May, 2023"
+                        placeholder="Пример: Концеренция по Цигун в Сан-Франциско, Калифорния, 3 дня начиная с 22 июля 2026 года" 
                         rows={6}
                         className="resize-none"                   
                      />
