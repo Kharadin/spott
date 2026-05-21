@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { RollerCoaster } from "lucide-react";
 
 
 export default defineSchema({
@@ -30,6 +31,8 @@ export default defineSchema({
     // Timestamps
     createdAt: v.number(),
     updatedAt: v.number(),
+    // Role
+    role: v.optional(v.string()),
   }).index("by_token", ["tokenIdentifier"]), // Primary auth lookup
 
   // Events table
@@ -100,9 +103,16 @@ export default defineSchema({
     .index("by_published", ["published"])
     .index("by_organizer_reviewed_published", ["organizerId", "reviewed", "published"])
     .index("by_published_start_date", ["published", "startDate"]) 
+    .index("by_end_date", ["endDate"])
 
     .searchIndex("search_title", { searchField: "title" }),
 
+  // CategoryCounts
+  categoryCounts: defineTable({
+    category: v.string(),
+    count: v.number(),
+  }).index("by_category", ["category"]),
+  
   // Registrations/Tickets
   registrations: defineTable({
     eventId: v.id("events"),

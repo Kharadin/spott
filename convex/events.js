@@ -1,7 +1,12 @@
 
+import { cx } from "class-variance-authority";
 import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import {txUpdateCounter} from "./admin";
+
+
+// Helper function to safely increment and decrement category counts
 
 
 // ==========================================
@@ -84,11 +89,11 @@ export const createEvent = mutation ({
       
         try {
             const user = await ctx.runQuery(internal.users.getCurrentUser);
-            if (!user) throw new Error("Пользователь не авторизован");
+            if (!user) throw new Error("User not authorized");
               
             // Reuse the local JS function directly 
             const isBlocked = await checkUnreviewedOrUnpublised(ctx, user._id);
-            if (isBlocked) throw new Error("У вас уже есть 2 непроверенных/неоплаченных мероприятия.");
+            if (isBlocked) throw new Error("You already have 2 unreviewed or unpublished events.");
 
             const themeColor = args.themeColor
             // const themeColor = args.hasPro ? args.themeColor : defaultColor;
@@ -116,10 +121,15 @@ export const createEvent = mutation ({
        await ctx.db.patch(user._id, {
         freeEventsCreated: user.freeEventsCreated + 1
        })
+
+       // Update category count NO, since we only account the published, so it should be added when toggling "published" in the admin'
+        //    await txUpdateCounter(ctx, args.category, 1);
+
         return await eventId;
         } catch (error) {
             throw new Error (`Failed to create event: ${error.message}`)
         }
+
 
     },
 
@@ -176,6 +186,11 @@ export const deleteEvent = mutation ({
         // Delete the event
         await ctx.db.delete(args.eventId);
 
+        // Update the category count (if published)
+        if (event.published) {
+        await txUpdateCounter(ctx, event.category, -1); }
+
+
         // If user has some freeEventsCreated, then decrease their num by 1 (we did not even check it's a free event that's deleted, but Ok, it's learing material)
         if (user.freeEventsCreated > 0) {
             await ctx.db.patch(user._id, {
@@ -183,9 +198,27 @@ export const deleteEvent = mutation ({
             })
         }
 
+        
+
         return {success: true};
     }
 })
+
+// 3. Update an Event (Handles category shifts) Looks Ok.
+export const updateEventCategory = mutation({
+  args: { id: v.id("events"), newCategory: v.string() },
+  handler: async (ctx, args) => {
+    const event = await ctx.db.get(args.id);
+    if (!event || event.category === args.newCategory) return;
+
+    const oldCategory = event.category;
+    
+    await ctx.db.patch(args.id, { category: args.newCategory });
+
+    await txUpdateCounter(ctx, oldCategory, -1);
+    await txUpdateCounter(ctx, args.newCategory, 1);
+  },
+});
 
 export const syncAllRegistrationCounts = mutation({
     args: {}, // No args needed to sync everything
@@ -210,4 +243,40 @@ export const syncAllRegistrationCounts = mutation({
 
         return { updated: events.length };
     },
+});
+
+// convex/events.js
+
+export const backfillCategoryCounts = mutation({
+  args: {},
+  handler: async (ctx) => {
+    // 1. Fetch all existing events
+    const allEvents = await ctx.db.query("events")
+    .withIndex("by_published", (q) => q.eq("published", true))
+    .collect();
+
+    // 2. Aggregate the counts in memory
+    const counts = {};
+    allEvents.forEach((event) => {
+      if (event.category) {
+        counts[event.category] = (counts[event.category] || 0) + 1;
+      }
+    });
+
+    // 3. Clear out any existing data in the tracker table to prevent duplicates
+    const existingCounters = await ctx.db.query("categoryCounts").collect();
+    for (const counter of existingCounters) {
+      await ctx.db.delete(counter._id);
+    }
+
+    // 4. Insert the fresh, accurate counts into the table
+
+    //                             Object.entries(counts)- takes our object of key-value pairs and turns it into an array (of arrays)
+    // const [category, count] 0f .... takes these arrays (one by 1) and Destrucrures the category into categry varible and count into count
+    for (const [category, count] of Object.entries(counts)) {
+      await ctx.db.insert("categoryCounts", { category, count }); // shourt form
+    }
+
+    return { message: "Backfill complete!", dynamicCountsComputed: counts };
+  },
 });

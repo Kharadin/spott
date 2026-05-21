@@ -30,7 +30,7 @@ import { fa } from "zod/v4/locales";
 export default function ExplorePage() {
   const router = useRouter();
   const plugin = useRef(Autoplay({
-     delay: 4000, stopOnInteraction: false,
+     delay: 5000, stopOnInteraction: false,
     
     jump: false,
        
@@ -112,91 +112,97 @@ export default function ExplorePage() {
       <p className='text-ld mt-2 text-slate-300 max-w-4xl mx-auto'> Развивающие мероприятия повсюду. Посмотрите Рекомендуемые, посмотрите события в своем городе, поищите по категориям или в других городах</p>
      </div>
 
-     {/* Featured Carousel */}
-     {!featuredEvents ?  (
-        <div className="h-[400px] flex items-center justify-center">
-          <Loader2 className="animate-spin w-8 h-8 text-purple-500" />
-        </div>
-      ) : (
-        <div className='mb-16'>
-            <Carousel
-            plugins={[plugin.current]}
-             opts = {{duration: 180, friction: 0.82, loop: true}}
-            className="w-full"
-            onMouseEnter={plugin.current.stop}
-            onMouseLeave={()=> plugin.current.play()}      
-            setApi={undefined}  >
-            <CarouselContent className="transform-gpu will-change-transform">
-              {featuredEvents.map((event, index) => (
-                <CarouselItem key={event._id} className={undefined}>
-                  <div
-                    className="relative h-[400px] rounded-xl overflow-hidden cursor-pointer"
-                    onClick={() => handleEventClick(event.slug)}
-                  >
-                    {event.coverImage ? (
-                      
-                      <Image
-                        src={event.coverImage}
-                        alt={event.title}
-                        fill
-                        className="w-full h-full object-cover"
-                        style={{
-                            objectPosition: `${event.picXposition !== undefined ? event.picXposition : 50}%  
-                                              ${event.picYposition !==undefined ? event.picYposition : 50}%`
-                        }}
-                        priority = {index === 0}
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        //  unoptimized
-                        //  className="w-full h-full object-cover" 
-                      />
-                    ) : (
-                      <div
-                        className="absolute inset-0"
-                        style={{ backgroundColor: event.themeColor }}
-                      />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/30" />
-                    {/* this was to make the images darker */}
-                    <div className="relative h-full flex flex-col justify-end p-8 md:p-12">
-                      <Badge className="w-fit mb-4" variant="secondary">
-                        {/* width fit content */}
-                        {event.city}, {event.state || event.country}
-                      </Badge>
-                      <h2 className="text-3xl md:text-5xl font-bold mb-3 text-white">
-                        {event.title}
-                      </h2>
-                      <p className="text-lg text-white/90 mb-4 max-w-2xl line-clamp-2">
-                        {event.description}
-                      </p>
-                      <div className="flex items-center  gap-4 text-white/80">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4" />
-                          <span className="text-sm">
-                            {format(event.startDate, "PPP")}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4" />
-                          <span className="text-sm">{event.city}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Users className="w-4 h-4" />
-                          <span className="text-sm">
-                            {event.registrationCount} registered
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="left-2" />
-            <CarouselNext className="right-2" />
-          </Carousel>
-        </div>
+    {/* Featured Carousel */}
+{!featuredEvents ?  (
+   <div className="h-[400px] flex items-center justify-center">
+     <Loader2 className="animate-spin w-8 h-8 text-purple-500" />
+   </div>
+ ) : (
+   <div className='mb-16'>
+       <Carousel
+         plugins={[plugin.current]}
+         opts={{ duration: 380, friction: 0.92, loop: true }}
+         className="w-full relative"
+         onMouseEnter={plugin.current.stop}
+         onMouseLeave={() => plugin.current.play()}      
+         setApi={undefined}  
+       >
+         {/* 1. MASK LAYER: Captures the sliding action cleanly within a rounded frame */}
+         <div className="overflow-hidden rounded-xl w-full"> 
+           
+           {/* 2. FIX: Added ml-0 to cancel the native negative layout shift */}
+           <CarouselContent className="transform-gpu will-change-transform ml-0">
+             {featuredEvents.map((event, index) => (
+              //  {/* 3. FIX: Added pl-0 so the slide canvas occupies exactly 100% width */}
+               <CarouselItem key={event._id} className="pl-0">
+                 <div
+                   className="relative h-[400px] cursor-pointer"
+                   onClick={() => handleEventClick(event.slug)}
+                 >
+                   {event.coverImage ? (
+                     <Image
+                       src={event.coverImage}
+                       alt={event.title}
+                       fill
+                       className="w-full h-full object-cover"
+                       style={{
+                           objectPosition: `${event.picXposition !== undefined ? event.picXposition : 50}%  
+                                             ${event.picYposition !==undefined ? event.picYposition : 50}%`
+                       }}
+                       priority={index === 0}
+                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                     />
+                   ) : (
+                     <div
+                       className="absolute inset-0"
+                       style={{ backgroundColor: event.themeColor }}
+                     />
+                   )}
+                   <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/30" />
+                   <div className="relative h-full flex flex-col justify-end p-8 md:p-12">
+                     <Badge className="w-fit mb-4" variant="secondary">
+                       {event.city}, {event.state || event.country}
+                     </Badge>
+                     <h2 className="text-3xl md:text-5xl font-bold mb-3 text-white">
+                       {event.title}
+                     </h2>
+                     <p className="text-lg text-white/90 mb-4 max-w-2xl line-clamp-2">
+                       {event.description}
+                     </p>
+                     <div className="flex items-center gap-4 text-white/80">
+                       <div className="flex items-center gap-2">
+                         <Calendar className="w-4 h-4" />
+                         <span className="text-sm">
+                           {format(event.startDate, "PPP")}
+                         </span>
+                       </div>
+                       <div className="flex items-center gap-2">
+                         <MapPin className="w-4 h-4" />
+                         <span className="text-sm">{event.city}</span>
+                       </div>
+                       <div className="flex items-center gap-2">
+                         <Users className="w-4 h-4" />
+                         <span className="text-sm">
+                           {event.registrationCount} registered
+                         </span>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               </CarouselItem>
+             ))}
+           </CarouselContent>
+         </div> 
+         {/* END OF MASK LAYER */}
          
-      )}
+         {/* 4. NAVIGATION: Shifted inside slightly for a symmetrical overlay */}
+         <CarouselPrevious className="left-4" />
+         <CarouselNext className="right-4" />
+       </Carousel>
+   </div>
+)}
+
+
      {/* Local Events */}
       { ! localEvents ? (
         <div className="h-40 flex items-center justify-center">Finding local events ... </div>

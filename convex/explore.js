@@ -122,24 +122,33 @@ export const getEventsByCategory = query ({
     }
 })
 
+// export const getCategoryCounts = query ({
+//     handler: async (ctx) => {
+//         const now = Date.now();
+
+//         const events = await ctx.db
+//         .query("events")
+//         .withIndex("by_start_date")
+//         .collect();
+//         // lets count events by category
+//         const counts = {};
+//         events.forEach((event) => {
+//             counts[event.category] = (counts[event.category] || 0) + 1;
+//             //"read-modify-write" cycle, code is write - read -modify
+            
+//         });
+
+//         return counts;
+//     }
+// })
+
+{/* NEW QUERY FOR GETING CATEGORY COUNTS,  */}
+
 export const getCategoryCounts = query ({
     handler: async (ctx) => {
-        const now = Date.now();
+        const allCounts  = await ctx.db.query("categoryCounts").collect();
 
-        const events = await ctx.db
-        .query("events")
-        .withIndex("by_start_date")
-        .collect();
-        // lets count events by category
-        const counts = {};
-        events.forEach((event) => {
-            counts[event.category] = (counts[event.category] || 0) + 1;
-            //"read-modify-write" cycle, code is write - read -modify
-            
-        });
+        return Object.fromEntries(allCounts.map(c=> [c.category, c.count]));
 
-        return counts;
     }
-})
-
-
+})  

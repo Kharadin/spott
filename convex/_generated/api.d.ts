@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as admin from "../admin.js";
 import type * as dashboard from "../dashboard.js";
 import type * as datefix from "../datefix.js";
 import type * as events from "../events.js";
@@ -27,6 +28,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  admin: typeof admin;
   dashboard: typeof dashboard;
   datefix: typeof datefix;
   events: typeof events;
