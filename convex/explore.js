@@ -32,12 +32,27 @@ export const getEventsByLocation= query ({
     args: {
         city: v.optional(v.string()),
         state: v.optional(v.string()),
-        limit: v.optional(v.number()),
+        limit: v.optional(v.number()),  
     },
     handler: async (ctx, args)=>{
         const now = Date.now();
+        console.log(args.city, args.state)
 
-        if (args.city){
+        if (!args.city) args.city = 'Anycity'
+
+        // in  case (only state) then we search only by state
+        if (args.city==='Anycity' && args.state){
+            let events = await ctx.db
+            .query("events")
+            .withIndex("by_state_published_start_date", (q)=> q
+            .eq("state", args.state)
+            .eq("published", true)
+            .gte("startDate", now))
+            .collect();
+
+            return events.slice(0, args.limit ?? 4)
+        }   // in other case (only city) then we search only by city
+         else if (args.city ){
             
             let events = await ctx.db
             .query("events")
@@ -57,18 +72,6 @@ export const getEventsByLocation= query ({
              return events.slice(0, args.limit ?? 4)
         }
 
-        // in other case (only state) then we search only by state
-        if (!args.city){
-            let events = await ctx.db
-            .query("events")
-            .withIndex("by_state_published_start_date", (q)=> q
-            .eq("state", args.state)
-            .eq("published", true)
-            .gte("startDate", now))
-            .collect();
-
-            return events.slice(0, args.limit ?? 4)
-        }
        
     },
 

@@ -36,7 +36,7 @@ export default function DynamicExplorePage() {
       : api.explore.getEventsByLocation,
     isCategory
       ? { category: slug, limit: 50 }
-      : city && state
+      :  state
         ? { city, state, limit: 50 }
         : "skip"
   );

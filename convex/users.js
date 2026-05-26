@@ -83,8 +83,9 @@ export const getCurrentUser = query({
 export const completeOnboarding = mutation ({
       args: {
         location: v.object ({
-          city: v.string(),
-          state: v.optional(v.string()),
+           // Allows string, null, or completely omitted (undefined)
+          city: v.optional(v.union(v.string(), v.null())),
+          state: v.optional(v.union(v.string(), v.null())),
           country: v.string(),
         }),
         interests: v.array(v.string()), // Min 3 categories

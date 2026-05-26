@@ -1,18 +1,16 @@
 "use client";
 
-import { useRef } from "react";
-import { useMemo } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, MapPin, Users, ArrowRight, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { useConvexQuery } from "@/hooks/use-convex-query";
 import { api } from "@/convex/_generated/api";
-import { createLocationSlug } from "@/lib/location-utils_bcp1";
+import { createLocationSlug } from "@/lib/location-utils";
 import Image from "next/image";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-// import { Card, CardContent } from "@/components/ui/card";
 import {
   Carousel,
   CarouselContent,
@@ -26,37 +24,71 @@ import EventCard from "@/components/event-card"
 import { Card, CardContent } from "@/components/ui/card";
 import { fr } from "date-fns/locale";
 import { fa } from "zod/v4/locales";
+import { City } from "country-state-city";
 
 export default function ExplorePage() {
   const router = useRouter();
   const plugin = useRef(Autoplay({
      delay: 5000, stopOnInteraction: false,
-    
-    jump: false,
-       
-    stopOnMouseEnter: true, // Native C++ browser layer boundary
-    }));
+     jump: false,
+     stopOnMouseEnter: true, 
+  }));
 
-  // 1. Fetch user (let this run in background)
+  // 1. Fetch user (runs in background)
   const { data: currentUser } = useConvexQuery(api.users.getCurrentUser);
-  console.log(currentUser);
-  // Fetch events
+
+  // 2. Local reactive state tracking the fallback or chosen location
+  const [activeLocation, setActiveLocation] = useState({
+    city: "Gurgaon",
+    state: "Haryana"
+  });
+
+  // 3. Sync local state with database OR fallback to cached guest choices whenever page mounts
+  useEffect(() => {
+    if (currentUser?.location?.state) {
+      setActiveLocation({
+        city: currentUser.location.city || "",
+        state: currentUser.location.state
+      });
+    } else {
+      // Unauthenticated guest path fallback
+      const savedCity = localStorage.getItem("guest_city");
+      const savedState = localStorage.getItem("guest_state");
+      
+      if (savedState) {
+        setActiveLocation({
+          city: savedCity || "", 
+          state: savedState
+        });
+      }
+    }
+  }, [currentUser]);
+
+  // 4. Fetch events (Preserving your exact original query names, object structures, and custom loading aliases)
   const { data: featuredEvents, isLoading: loadingFeatured } = useConvexQuery(
     api.explore.getFeaturedEvents,
     { limit: 7 }
   );
-  // console.log(featuredEvents);
 
   const { data: localEvents, isLoading: loadingLocal } = useConvexQuery(
     api.explore.getEventsByLocation,
     {
-      city: currentUser?.location?.city || "Gurgaon",
-      state: currentUser?.location?.state || "Haryana",
+      city: activeLocation.city || undefined, // undefined passes cleanly to avoid string mismatches
+      state: activeLocation.state,
       limit: 4,
     }
   );
-  // console.log("currentUser", currentUser);
-  // console.log("localEvents", localEvents);
+
+  const recommendedCity = "Gurgaon";
+  const recommendedState= "Haryana";
+  const {data: recomLocationEvents, isLoading: loadingRecomLocation} = useConvexQuery(
+    api.explore.getEventsByLocation,
+    {
+      city: recommendedCity || undefined,
+      state: recommendedState,
+      limit: 4
+    }
+  )
 
   const { data: popularEvents, isLoading: loadingPopular } = useConvexQuery(
     api.explore.getPopularEvents,
@@ -65,17 +97,14 @@ export default function ExplorePage() {
 
   const { data: categoryCounts } = useConvexQuery(
     api.explore.getCategoryCounts
-  ); // Since useConvexQuery is async,
-  //  categoryCounts will be initially undefined, so optional chaining operator ?., 
-  // count: will be initially undefined until data arrives.
+  ); 
 
- const categoriesWithCounts = useMemo(() => {
+  const categoriesWithCounts = useMemo(() => {
     return CATEGORIES.map((cat) => ({
       ...cat,
       count: categoryCounts?.[cat.id] || 0
     }));
   }, [categoryCounts]);
-
 
   const handleEventClick = (slug) => {
     router.push(`/events/${slug}`);
@@ -85,25 +114,18 @@ export default function ExplorePage() {
     router.push(`explore/${categoryId}`);
   }
 
-
   const handleViewLocalEvents = () => {
-    const city = currentUser?.location?.city || "Gurgaon";
-    const state = currentUser?.location?.state || "Haryana";
+    const city = activeLocation.city || "Gurgaon";
+    const state = activeLocation.state;
     const slug = createLocationSlug(city, state);
     router.push(`/explore/${slug}`);
-   };
+  };
 
-   // Loading state
-  //  const isLoading = loadingFeatured || loadingLocal || loadingPopular
-
-  //  if (isLoading){
-  //   return <div className="min-h-screen flex items-center justify-center">
-  //     <Loader2 className="animate-spin w-8 h-8 text-purple-500" />
-  //   </div>
-
-  //  }
-  
-
+  const handleViewStateEvents = async () => {
+    const state = activeLocation.state;
+    const slug = createLocationSlug(null, state);
+    router.push(`/explore/${slug}`);
+  }
   return (
      <> 
      <div className='pb-6 text-center'>
@@ -204,48 +226,133 @@ export default function ExplorePage() {
 
 
      {/* Local Events */}
-      { ! localEvents ? (
+      {!localEvents ? (
         <div className="h-40 flex items-center justify-center">Finding local events ... </div>
-      ) :  (
+      ) : (
         <div className='mb-16 '>
-           {/* the whole div for LocalEvents title, subitle, comment and view all button */}
           <div className="mb-4"> 
-            {/* first comes the title, taking the whole line */}
             <h2 className="text-3xl font-bold mb-1">
-              Мероприятия по локации
+              Events by location:
             </h2>
-             {/* then the div uniting the subtitle  And the view all button (to go below on small screens, and keep right)*/}
-              <div className="flex items-center  justify-between ">
-             
-                  <p className=" text-muted-foreground " >
-                   {`Намечаются в:  `} 
-                    <span className="font-semibold text-slate-200">
-                      {currentUser?.location?.city || "Краснодарский Край, Сочи"}
-                    </span>
-                  </p>  
-                 
-                <Button
-                  variant="outline"
-                  className="gap-2 bg-slate-500 text-white dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-colors"
-                  onClick={handleViewLocalEvents} 
-                 >
-                  Смотреть все<ArrowRight className="w-4 h-4" />
-                </Button> 
-              </div>
-              <p className=" mt-2 text-xs text-slate-400 ">Выберите свою область и город на панели наверху</p>
-          </div>  
-          <div className= "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {localEvents.map((event)=>(
-              <EventCard 
-              key={event._id} 
-              event={event}
-              variant="grid"
-              onClick={() => handleEventClick(event.slug)} />
-            ))}
-          </div>
+          
+            {/* Narrow screen row-collapse container fixes */}
+            <div className="flex flex-col min-[460px]:flex-row min-[460px]:items-center min-[460px]:justify-between gap-4">
+                <p className="text-muted-foreground whitespace-normal">
+                {`Nearest in :  `} 
+                  <span className="font-semibold text-slate-200 block sm:inline">
+                    {activeLocation.city ? `${activeLocation.city}, ` : ""}{activeLocation.state}
+                  </span>
+                </p>  
 
+                <div className='flex flex-wrap sm:justify-end gap-2'>
+                  {/* Hide or disable View Town if no city is currently selected */}
+                  {activeLocation.city && (
+                    <Button
+                      variant="outline"
+                      className="gap-2 bg-slate-500 text-white dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-colors"
+                      onClick={handleViewLocalEvents} 
+                    >
+                      View Town<ArrowRight className="w-4 h-4" />
+                    </Button>
+                  )} 
+                    
+                  <Button 
+                      onClick={handleViewStateEvents} 
+                      variant="outline"
+                      className="gap-2 bg-slate-500 text-white dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-colors"
+                  >
+                      <span>All State</span>
+                      <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </div>
+            </div>
+
+            <p className="mt-2 text-md text-slate-400">Select your state and town in the panel on top</p>
+          </div>  
+            
+            {/* Display "No Events" if there are no local events */}
+            {!localEvents.length ?  (
+              <div className="h-4 flex items-center justify-center text-2xl">No events found</div>
+            ) : 
+            <div className= "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {localEvents.map((event)=>(
+                <EventCard 
+                key={event._id} 
+                event={event}
+                variant="grid"
+                onClick={() => handleEventClick(event.slug)} 
+                />
+              ))}
+            </div>
+            }
         </div>  
-      )}
+        
+        )}
+      
+      {/* Recommeded Location Events */}
+       {!recomLocationEvents ? (
+        <div className="h-40 flex items-center justify-center">Finding Recommended location events ... </div>
+      ) : (
+        <div className='mb-16 '>
+          <div className="mb-4"> 
+            <h2 className="text-3xl font-bold mb-1">
+              Events in recommended location:
+            </h2>
+          
+            {/* Narrow screen row-collapse container fixes */}
+            <div className="flex flex-col min-[460px]:flex-row min-[460px]:items-center min-[460px]:justify-between gap-4">
+                <p className="text-muted-foreground whitespace-normal">
+                {`Nearest in :  `} 
+                  <span className="font-semibold text-slate-200 block sm:inline">
+                    {recommendedCity ? `${recommendedCity}, ` : ""}{recommendedState}
+                  </span>
+                </p>
+                <div className='flex flex-wrap sm:justify-end gap-2'>
+                  {/* Hide or disable View Town if no city is currently selected */}
+                  {activeLocation.city && (
+                    <Button
+                      variant="outline"
+                      className="gap-2 bg-slate-500 text-white dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-colors"
+                      onClick={handleViewLocalEvents} 
+                    >
+                      View Town<ArrowRight className="w-4 h-4" />
+                    </Button>
+                  )} 
+                    
+                  <Button 
+                      onClick={handleViewStateEvents} 
+                      variant="outline"
+                      className="gap-2 bg-slate-500 text-white dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-colors"
+                  >
+                      <span>All State</span>
+                      <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </div>
+            </div>
+            <p className="mt-2 text-md text-slate-400">Select your state and town in the panel on top</p>
+          </div> 
+           {/* Display "No Events" if there are no local events */}
+            {!recomLocationEvents.length ?  (
+              <div className="h-4 flex items-center justify-center text-2xl">No recommended location events found</div>
+            ) : 
+            <div className= "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {recomLocationEvents.map((event)=>(
+                <EventCard 
+                key={event._id} 
+                event={event}
+                variant="grid"
+                onClick={() => handleEventClick(event.slug)} 
+                />
+              ))}
+            </div>
+            }
+
+
+        </div>
+         )}
+
+
+      
       {/* Browse by category */}
       <div className="mb-16">
         <h2 className="text-3xl font-bold mb-6">Смотреть по категориям</h2>

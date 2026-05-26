@@ -19,17 +19,34 @@ import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
 import RegisterModal from './_components/register-modal'
 
-
-
-
 // Utility function to darken a color
 function darkenColor(color, amount) {
-  const colorWithoutHash = color.replace("#", "");
-  const num = parseInt(colorWithoutHash, 16);
-  const r = Math.max(0, (num >> 16) - amount * 255);
-  const g = Math.max(0, ((num >> 8) & 0x00ff) - amount * 255);
-  const b = Math.max(0, (num & 0x0000ff) - amount * 255);
-  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
+  // 1. Remove the hash
+  let hex = color.replace("#", "");
+
+  // 2. Convert 3-digit shorthand (e.g. "0f0") to 6-digit (e.g. "00ff00")
+  if (hex.length === 3) {
+    hex = hex.split("").map(char => char + char).join("");
+  }
+  
+  // 3. Strip alpha channel if present (e.g. "00ff00ff" -> "00ff00")
+  if (hex.length === 8) {
+    hex = hex.slice(0, 6);
+  }
+
+  // 4. Extract RGB components safely using parseInt directly on slices
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+
+  // 5. Subtract the amount and clamp between 0 and 255
+  const darkenAmount = amount * 255;
+  const newR = Math.max(0, Math.min(255, Math.round(r - darkenAmount)));
+  const newG = Math.max(0, Math.min(255, Math.round(g - darkenAmount)));
+  const newB = Math.max(0, Math.min(255, Math.round(b - darkenAmount)));
+
+  // 6. Return standard 6-digit hex format
+  return `#${((1 << 24) + (newR << 16) + (newG << 8) + newB).toString(16).slice(1)}`;
 }
 
 export default function  EventDetailPage()  {
@@ -92,11 +109,13 @@ export default function  EventDetailPage()  {
     const isEventFull = event.capacity <= event.registrationCount
     const isOrganizer = user?.id === event.organizerId;
 
+    console.log(event.themeColor)
+    console.log(darkenColor(event.themeColor, 0.2))
 
     return (
         <div
             style={{
-                backgroundColor: event.themeColor || "1e3a8a",
+                backgroundColor: event.themeColor || "#1e3a8a",
                 }}
             className='min-h-screen p-8 -mt-6 md:-mt-16 lg:-mx-1'
         >
@@ -126,8 +145,6 @@ export default function  EventDetailPage()  {
                         </div>
                     </div>
 
-                
-
                 {/* Hero Image */}
                 {event.coverImage && (
                     <div className="relative h-[250px] md:h-[400px] rounded-2xl overflow-hidden mb-6">
@@ -135,7 +152,12 @@ export default function  EventDetailPage()  {
                             src={event.coverImage} 
                             alt={event.title}
                             fill
-                            className="object-cover"
+                            // className="object-cover"
+                             className="w-full h-full object-cover"
+                              style={{
+                           objectPosition: `${event.picXposition !== undefined ? event.picXposition : 50}%  
+                                             ${event.picYposition !==undefined ? event.picYposition : 50}%`
+                       }}
                             priority
                         />
                     </div>

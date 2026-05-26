@@ -24,10 +24,10 @@ const Header = () => {
   const {showOnboarding, handleOnboardingComplete, handleOnboardingSkip, } = useOnboarding();
 
  
-  const { has } = useAuth();
-  const hasPro = has?.({ plan: "pro" });
+  // const { has } = useAuth();
+  // const hasPro = has?.({ plan: "pro" });
 
-  console.log("haspro",hasPro);
+  // console.log("haspro",hasPro);
   return (
     <>
       <nav className='fixed top-0 left-0 right-0 bg-background/20 backdrop-saturate-150 drop-blur-xl z-20 border-b  border-zinc-200/50'>
@@ -37,11 +37,11 @@ const Header = () => {
           <Image src="/spott.png" alt="Spott Logo" width={500} height={500} 
           className='w-full h-11' priority />
           {/* Pro Badge */}
-          {hasPro && (
+          {/* {hasPro && (
             <Badge className='bg-linear-to-r from-pink-500 to-orange-500 text-white ml-3'
             > <Crown className='mr-2 h-3 w-3' />
               PRO</Badge>
-          )} 
+          )}  */}
           </Link>
           {/* search & location-  Desktop only  */}
           <div className='hidden md:flex flex-1 justify-center'>
@@ -52,13 +52,13 @@ const Header = () => {
 
           {/* Right Side actions */}
           <div className='flex items-center'>
-               {!hasPro && (
+               { true && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowPricingModal(true)}
               >
-                Pricing
+                Info
               </Button>
             )}    
               <Authenticated>

@@ -16,10 +16,12 @@ export default defineSchema({
     hasCompletedOnboarding: v.boolean(),
 
     // Attendee preferences (from onboarding)
+
+     // Updated location schema to support nulls
     location: v.optional(
       v.object({
-        city: v.string(),
-        state: v.optional(v.string()), // Added state field
+        city: v.optional(v.union(v.string(), v.null())),
+        state: v.optional(v.union(v.string(), v.null())),
         country: v.string(),
       })
     ),
