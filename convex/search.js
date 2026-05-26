@@ -15,7 +15,12 @@ export const searchEvents = query({
         const searchResults = await ctx.db
             .query("events")
             .withSearchIndex("search_title", (q)=> q.search("title", args.query))
-            .filter((q)=>q.gte(q.field("startDate"), now))
+            .filter((q)=> 
+                q.and(
+                    q.eq(q.field("published"), true),
+                    q.gte(q.field("endDate"), now)
+                    )
+                )
             .take(args.limit ?? 5);
         return searchResults;
      }

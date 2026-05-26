@@ -39,8 +39,8 @@ export default function ExplorePage() {
 
   // 2. Local reactive state tracking the fallback or chosen location
   const [activeLocation, setActiveLocation] = useState({
-    city: "Gurgaon",
-    state: "Haryana"
+    city: "Balgalore Urban",
+    state: "Karnataka",
   });
 
   // 3. Sync local state with database OR fallback to cached guest choices whenever page mounts
@@ -114,15 +114,16 @@ export default function ExplorePage() {
     router.push(`explore/${categoryId}`);
   }
 
-  const handleViewLocalEvents = () => {
-    const city = activeLocation.city || "Gurgaon";
-    const state = activeLocation.state;
+  const handleViewLocalEvents = (cityParam, stateParam) => {
+      // Use the passed arguments, or fallback directly to your activeLocation state values
+    const city = cityParam || activeLocation.city;
+    const state = stateParam || activeLocation.state;
     const slug = createLocationSlug(city, state);
     router.push(`/explore/${slug}`);
   };
 
-  const handleViewStateEvents = async () => {
-    const state = activeLocation.state;
+  const handleViewStateEvents = (stateParam) => {
+    const state = stateParam || activeLocation.state;
     const slug = createLocationSlug(null, state);
     router.push(`/explore/${slug}`);
   }
@@ -308,19 +309,19 @@ export default function ExplorePage() {
                   </span>
                 </p>
                 <div className='flex flex-wrap sm:justify-end gap-2'>
-                  {/* Hide or disable View Town if no city is currently selected */}
-                  {activeLocation.city && (
+                  {/* Hide or disable View Town if no recommeded city  */}
+                  {recommendedCity && (
                     <Button
                       variant="outline"
                       className="gap-2 bg-slate-500 text-white dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-colors"
-                      onClick={handleViewLocalEvents} 
+                      onClick={() => handleViewLocalEvents(recommendedCity, recommendedState)} 
                     >
-                      View Town<ArrowRight className="w-4 h-4" />
+                      All in Town<ArrowRight className="w-4 h-4" />
                     </Button>
                   )} 
                     
                   <Button 
-                      onClick={handleViewStateEvents} 
+                      onClick={()=> handleViewStateEvents(recommendedState)} 
                       variant="outline"
                       className="gap-2 bg-slate-500 text-white dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-colors"
                   >
@@ -329,7 +330,7 @@ export default function ExplorePage() {
                   </Button>
                 </div>
             </div>
-            <p className="mt-2 text-md text-slate-400">Select your state and town in the panel on top</p>
+            {/* <p className="mt-2 text-md text-slate-400">Select your state and town in the panel on top</p> */}
           </div> 
            {/* Display "No Events" if there are no local events */}
             {!recomLocationEvents.length ?  (

@@ -33,9 +33,9 @@ const Header = () => {
       <nav className='fixed top-0 left-0 right-0 bg-background/20 backdrop-saturate-150 drop-blur-xl z-20 border-b  border-zinc-200/50'>
         <div className='max-w-7xl mx-auto px-6 py-4 flex items-center justify-between'>
           {/* Logo  */}
-          <Link href={"/"} className='flex items-center'>
-          <Image src="/spott.png" alt="Spott Logo" width={500} height={500} 
-          className='w-full h-11' priority />
+          <Link href={"/"} className='flex items-center z-10'>
+            <Image src="/spott.png" alt="Spott Logo" width={500} height={500} 
+            className='w-full h-11' priority />
           {/* Pro Badge */}
           {/* {hasPro && (
             <Badge className='bg-linear-to-r from-pink-500 to-orange-500 text-white ml-3'
@@ -43,15 +43,14 @@ const Header = () => {
               PRO</Badge>
           )}  */}
           </Link>
-          {/* search & location-  Desktop only  */}
-          <div className='hidden md:flex flex-1 justify-center'>
-
+          {/* CLEAN CENTERED SEARCH BAR */}
+          <div className='hidden md:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10'>
             <SearchLocationBar />
           </div>
 
 
           {/* Right Side actions */}
-          <div className='flex items-center'>
+          <div className='flex items-center z-10'>
                { true && (
               <Button
                 variant="ghost"
