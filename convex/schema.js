@@ -104,7 +104,8 @@ export default defineSchema({
     .index("by_featured_start_date", ["featured", "startDate"])
     .index("by_published", ["published"])
     .index("by_organizer_reviewed_published", ["organizerId", "reviewed", "published"])
-    .index("by_published_start_date", ["published", "startDate"]) 
+    .index("by_published_start_date", ["published", "startDate"])
+    .index("by_published_end_date", ["published", "endDate"])
     .index("by_end_date", ["endDate"])
 
     .searchIndex("search_title", { searchField: "title" }),

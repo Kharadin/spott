@@ -5,21 +5,28 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
-        // port: '', //
-        pathname: '/**', // 
+        pathname: '/**', 
       },
-        {
-        protocol: 'http', // Adds support for http
+      {
+        protocol: 'http', 
         hostname: 'images.unsplash.com',
         port: '',
         pathname: '/**',
       },
+      // ADD THIS PATTERN FOR CONVEX STORAGE FILES
+      {
+        protocol: 'https',
+        // Looks for your deployment URL hostname dynamically from your ENV file
+        // e.g. "quiet-wolf-123.convex.cloud" or "your-project.convex.site"
+        hostname: process.env.NEXT_PUBLIC_CONVEX_URL
+          ? process.env.NEXT_PUBLIC_CONVEX_URL.replace('https://', '')
+          : '*.convex.cloud', 
+        pathname: '/api/storage/**',
+      },
     ],
-     unoptimized: process.env.NODE_ENV === 'development', //Чтобы лок сервер не тормозил на картинках, в next.config.js можно временно (или для dev-режима) прописать:
+    unoptimized: process.env.NODE_ENV === 'development', 
   },
-  staticPageGenerationTimeout: 120, // Increase to 120 seconds
-  
+  staticPageGenerationTimeout: 120, 
 }
 
 export default nextConfig;
- 

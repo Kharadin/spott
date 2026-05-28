@@ -13,6 +13,7 @@ import type * as dashboard from "../dashboard.js";
 import type * as datefix from "../datefix.js";
 import type * as events from "../events.js";
 import type * as explore from "../explore.js";
+import type * as files from "../files.js";
 import type * as migrations from "../migrations.js";
 import type * as registrations from "../registrations.js";
 import type * as search from "../search.js";
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   datefix: typeof datefix;
   events: typeof events;
   explore: typeof explore;
+  files: typeof files;
   migrations: typeof migrations;
   registrations: typeof registrations;
   search: typeof search;

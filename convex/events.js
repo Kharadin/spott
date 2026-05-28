@@ -1,8 +1,8 @@
 
-import { cx } from "class-variance-authority";
 import { internal } from "./_generated/api";
-import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
+import {api} from "./_generated/api";
+import { mutation, query, action } from "./_generated/server";
+import {  v } from "convex/values";
 import {txUpdateCounter} from "./admin";
 
 
@@ -118,12 +118,15 @@ export const createEvent = mutation ({
 
         });
        // Update users's free event count
-       await ctx.db.patch(user._id, {
-        freeEventsCreated: user.freeEventsCreated + 1
-       })
+    //    await ctx.db.patch(user._id, {
+    //     freeEventsCreated: user.freeEventsCreated + 1
+    //    })
 
        // Update category count NO, since we only account the published, so it should be added when toggling "published" in the admin'
         //    await txUpdateCounter(ctx, args.category, 1);
+
+        // Schedule a server action to send an email to the admin
+        await ctx.scheduler.runAfter(0, api.events.sendAdminNotification, { eventTitle: args.title });
 
         return await eventId;
         } catch (error) {
@@ -134,6 +137,29 @@ export const createEvent = mutation ({
     },
 
 })
+
+export const sendAdminNotification = action ({
+    args: {eventTitle: v.string()},
+    handler: async (ctx, args) => {
+        const resendKey  = process.env.RESEND_API_KEY;
+
+        await fetch ("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${resendKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                from: "Spott Alerts <onboarding@resend.dev>", 
+                to: "dmitry.kharadin@gmail.com",
+                subject: "New event created",
+                html: `<p> New event created: <strong>${args.eventTitle}</strong></p>`
+            })
+        })
+        console.log("Admin notification sent");
+    }
+})
+
 
 // Get event by slug
 export const getEventBySlug = query ({
@@ -250,9 +276,11 @@ export const syncAllRegistrationCounts = mutation({
 export const backfillCategoryCounts = mutation({
   args: {},
   handler: async (ctx) => {
+
+     const now = Date.now();
     // 1. Fetch all existing events
     const allEvents = await ctx.db.query("events")
-    .withIndex("by_published", (q) => q.eq("published", true))
+    .withIndex("by_published_end_date", (q) => q.eq("published", true).gte("endDate", now))
     .collect();
 
     // 2. Aggregate the counts in memory

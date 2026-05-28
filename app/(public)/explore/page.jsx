@@ -251,14 +251,14 @@ export default function ExplorePage() {
                     <Button
                       variant="outline"
                       className="gap-2 bg-slate-500 text-white dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-colors"
-                      onClick={handleViewLocalEvents} 
+                      onClick={()=> handleViewLocalEvents()} 
                     >
                       View Town<ArrowRight className="w-4 h-4" />
                     </Button>
                   )} 
                     
                   <Button 
-                      onClick={handleViewStateEvents} 
+                      onClick={()=> handleViewStateEvents()} 
                       variant="outline"
                       className="gap-2 bg-slate-500 text-white dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-colors"
                   >

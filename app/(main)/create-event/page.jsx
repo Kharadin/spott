@@ -1,4 +1,3 @@
-// my. seems to transfer to main page when paying. can be changed to authors' code.
 /* eslint-disable react-hooks/incompatible-library */
 "use client";
 
@@ -261,7 +260,7 @@ const coverImage = watch("coverImage");
                   setShowPricingModal(true)
                 }}
             
-            >Что почём</Button>
+            >Инфо</Button>
             {/* <AiEventCreator  onEventGenerated ={handleAIGenerate}/> */}
           </div>  
         
@@ -581,7 +580,7 @@ const coverImage = watch("coverImage");
             </p>
           )}
         </div>
-        <p className="mt-1 mb-1">После создания ивента следует его рассмотрение/согласование в течение 2-24х часов. Вам придет уведомление на почту. Далее следует оплата и публикация.</p>
+        <p className="mt-1 mb-1">После создания ивента следует его рассмотрение/согласование в течение 2-24х часов. Вам придет уведомление на почту со ссылкой на оплату. Далее следует оплата и публикация.</p>
         <Button 
           type="submit"
           disabled={isLoading}
