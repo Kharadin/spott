@@ -31,11 +31,11 @@ const Header = () => {
   return (
     <>
       <nav className='fixed top-0 left-0 right-0 bg-background/20 backdrop-saturate-150 drop-blur-xl z-20 border-b  border-zinc-200/50'>
-        <div className='max-w-7xl mx-auto px-6 py-4 flex items-center justify-between'>
+        <div className='max-w-7xl mx-auto px-6 py-2 flex items-center justify-between'>
           {/* Logo  */}
           <Link href={"/"} className='flex items-center z-10'>
             <Image src="/spott.png" alt="Spott Logo" width={500} height={500} 
-            className='w-full h-11' priority />
+            className='w-full h-14' priority />
           {/* Pro Badge */}
           {/* {hasPro && (
             <Badge className='bg-linear-to-r from-pink-500 to-orange-500 text-white ml-3'
