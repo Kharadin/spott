@@ -2,8 +2,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 import Header from "@/components/header";
 import { ConvexClientProvider } from "./ConvexClientProvider";
-import { ClerkProvider } from "@clerk/nextjs";
-import { shadesOfPurple } from "@clerk/themes";
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata = {
@@ -17,18 +15,11 @@ export default function RootLayout({ children }) {
       <body className={`bg-linear-to-b from-blue-950 via-zinc-700 to-stone-600 text-white`}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange >       
           {/* Header */}
-          <ClerkProvider appearance={{theme: shadesOfPurple,}}>
 
           <ConvexClientProvider>
             <Header />   
             <main className="relative min-h-screen container mx-auto pt-38 md:pt-23">
-                {/* keep this */}
-                {/* relative: Allows absolute-positioned elements inside it to align to this main area. */}
-                {/* container- tailwind - limits the width The container class is "smart." It automatically adjusts as the screen gets smaller: 
-                  */}
-                  {/* mx-auto: Sets the left and right margins to "auto," which centers that 1280px block in the middle of the screen.  */}
-                  {/* pt-40 md:pt-32: Adds top padding so your content doesn't get hidden behind a fixed header.  */}
-                {/* glow */}
+            
                 <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
 
                 
@@ -46,7 +37,6 @@ export default function RootLayout({ children }) {
               <Toaster position= 'top-center' richColors />
             </main>
           </ConvexClientProvider>
-          </ClerkProvider>
         </ThemeProvider>
       </body>
     </html>

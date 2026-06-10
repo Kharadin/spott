@@ -1,4 +1,4 @@
-  import { useUser } from "@clerk/clerk-react";
+  import { useUser } from "@clerk/nextjs";
  import { useConvexAuth, useMutation } from "convex/react";
   import { useEffect, useState } from "react";
 

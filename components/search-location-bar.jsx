@@ -13,6 +13,7 @@ import { format } from 'date-fns'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { createLocationSlug } from '@/lib/location-utils'
 import { Button } from './ui/button'
+import { useClerkReachability } from '@/app/ConvexClientProvider'
 
 const SearchLocationBar = () => {
  const router = useRouter()
@@ -21,9 +22,10 @@ const SearchLocationBar = () => {
  const searchRef = useRef(null);
  const [selectedState, setSelectedState] = useState("")
  const [selectedCity, setSelectedCity] = useState("")
+ const { isClerkReachable } = useClerkReachability();
  
  const {data: currentUser, isLoading} = useConvexQuery(
-   api.users.getCurrentUser
+   isClerkReachable ? api.users.getCurrentUser : "skip"
  )
  const {mutate: updateLocation} = useConvexMutation(
    api.users.completeOnboarding

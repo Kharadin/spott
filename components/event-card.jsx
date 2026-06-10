@@ -31,7 +31,7 @@ export default function EventCard({
                 src={event.coverImage}
                 alt={event.title}
                 fill
-                className="object-cover"
+                className=" w-full h-auto object-cover"
               />
             ) : (
               <div
@@ -79,7 +79,7 @@ export default function EventCard({
           <Image
             src={event.coverImage}
             alt={event.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 "
+            className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500 "
             width={500}
             sizes="500px"  // experimental
             height={192}

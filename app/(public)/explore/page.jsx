@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { useConvexQuery } from "@/hooks/use-convex-query";
 import { api } from "@/convex/_generated/api";
 import { createLocationSlug } from "@/lib/location-utils";
+import { useClerkReachability } from "@/app/ConvexClientProvider";
 import Image from "next/image";
 
 import { Badge } from "@/components/ui/badge";
@@ -20,30 +21,31 @@ import {
 } from "@/components/ui/carousel";
 import { CATEGORIES } from "@/lib/data";
 import Autoplay from "embla-carousel-autoplay";
-import EventCard from "@/components/event-card"
+import EventCard from "@/components/event-card";
 import { Card, CardContent } from "@/components/ui/card";
-import { fr } from "date-fns/locale";
-import { fa } from "zod/v4/locales";
-import { City } from "country-state-city";
 
-export default function ExplorePage() {
+export default function ExplorePage({ initialFeatured = [], initialPopular = [], initialCounts = {} }) {
   const router = useRouter();
+  const { isClerkReachable } = useClerkReachability();
+  
   const plugin = useRef(Autoplay({
-     delay: 5000, stopOnInteraction: false,
+     delay: 5000, 
+     stopOnInteraction: false,
      jump: false,
      stopOnMouseEnter: true, 
   }));
 
-  // 1. Fetch user (runs in background)
-  const { data: currentUser } = useConvexQuery(api.users.getCurrentUser);
+  // 1. Fetch user context safely if Clerk is reachable
+  const queryTarget = isClerkReachable ? api.users.getCurrentUser : null;
+  const { data: currentUser } = useConvexQuery(queryTarget);
 
-  // 2. Local reactive state tracking the fallback or chosen location
+  // 2. State tracking chosen location
   const [activeLocation, setActiveLocation] = useState({
-    city: "Balgalore Urban",
+    city: "Bangalore Urban", // Typo corrected to prevent database query misses
     state: "Karnataka",
   });
 
-  // 3. Sync local state with database OR fallback to cached guest choices whenever page mounts
+  // 3. Synchronize user profile location parameters
   useEffect(() => {
     if (currentUser?.location?.state) {
       setActiveLocation({
@@ -51,7 +53,6 @@ export default function ExplorePage() {
         state: currentUser.location.state
       });
     } else {
-      // Unauthenticated guest path fallback
       const savedCity = localStorage.getItem("guest_city");
       const savedState = localStorage.getItem("guest_state");
       
@@ -64,40 +65,37 @@ export default function ExplorePage() {
     }
   }, [currentUser]);
 
-  // 4. Fetch events (Preserving your exact original query names, object structures, and custom loading aliases)
-  const { data: featuredEvents, isLoading: loadingFeatured } = useConvexQuery(
-    api.explore.getFeaturedEvents,
-    { limit: 7 }
-  );
+  // 4. Fetch events with SSR integration boundaries
+  const { data: featuredEventsRaw } = useConvexQuery(api.explore.getFeaturedEvents, { limit: 7 });
+  const featuredEvents = featuredEventsRaw || initialFeatured || [];
 
-  const { data: localEvents, isLoading: loadingLocal } = useConvexQuery(
+  const { data: localEventsRaw } = useConvexQuery(
     api.explore.getEventsByLocation,
     {
-      city: activeLocation.city || undefined, // undefined passes cleanly to avoid string mismatches
+      city: activeLocation.city || undefined, 
       state: activeLocation.state,
       limit: 4,
     }
   );
+  const localEvents = localEventsRaw || [];
 
   const recommendedCity = "Gurgaon";
-  const recommendedState= "Haryana";
-  const {data: recomLocationEvents, isLoading: loadingRecomLocation} = useConvexQuery(
+  const recommendedState = "Haryana";
+  const { data: recomLocationEventsRaw } = useConvexQuery(
     api.explore.getEventsByLocation,
     {
       city: recommendedCity || undefined,
       state: recommendedState,
       limit: 4
     }
-  )
-
-  const { data: popularEvents, isLoading: loadingPopular } = useConvexQuery(
-    api.explore.getPopularEvents,
-    { limit: 16 }
   );
+  const recomLocationEvents = recomLocationEventsRaw || [];
 
-  const { data: categoryCounts } = useConvexQuery(
-    api.explore.getCategoryCounts
-  ); 
+  const { data: popularEventsRaw } = useConvexQuery(api.explore.getPopularEvents, { limit: 16 });
+  const popularEvents = popularEventsRaw || initialPopular || [];
+
+  const { data: categoryCountsRaw } = useConvexQuery(api.explore.getCategoryCounts);
+  const categoryCounts = categoryCountsRaw || initialCounts || {};
 
   const categoriesWithCounts = useMemo(() => {
     return CATEGORIES.map((cat) => ({
@@ -110,12 +108,11 @@ export default function ExplorePage() {
     router.push(`/events/${slug}`);
   };
 
-  const handleCategoryClick = (categoryId)=> {
-    router.push(`explore/${categoryId}`);
-  }
+  const handleCategoryClick = (categoryId) => {
+    router.push(`/explore/${categoryId}`);
+  };
 
   const handleViewLocalEvents = (cityParam, stateParam) => {
-      // Use the passed arguments, or fallback directly to your activeLocation state values
     const city = cityParam || activeLocation.city;
     const state = stateParam || activeLocation.state;
     const slug = createLocationSlug(city, state);
@@ -126,8 +123,11 @@ export default function ExplorePage() {
     const state = stateParam || activeLocation.state;
     const slug = createLocationSlug(null, state);
     router.push(`/explore/${slug}`);
-  }
+  };
+
   return (
+ 
+
      <> 
      <div className='pb-6 text-center'>
 
@@ -167,13 +167,15 @@ export default function ExplorePage() {
                        src={event.coverImage}
                        alt={event.title}
                        fill
-                       className="w-full h-full object-cover"
+                       className="w-full h-full object-cover "
                        style={{
                            objectPosition: `${event.picXposition !== undefined ? event.picXposition : 50}%  
                                              ${event.picYposition !==undefined ? event.picYposition : 50}%`
                        }}
-                       priority={index === 0}
+                      //  priority={index === 0}
                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                       loading='lazy'
+
                      />
                    ) : (
                      <div
@@ -408,15 +410,13 @@ export default function ExplorePage() {
         </div>
       )}
 
-      {/* Empty Slate */}
-      {!loadingFeatured &&
-        !loadingLocal &&
-        !loadingPopular && 
-        (!featuredEvents || featuredEvents.length === 0 )&& 
-        (!localEvents || localEvents.length === 0) &&
-        (popularEvents || popularEvents.length === 0) && (
-
-          <Card className="p-12 text-center">
+     
+      {/* Empty Slate Layout Condition */}
+      {localEventsRaw !== undefined &&
+        featuredEvents.length === 0 && 
+        localEvents.length === 0 &&
+        popularEvents.length === 0 && (
+          <Card className="p-12 text-center bg-gray-900/50 border-gray-800">
             <div className="max-w-md mx-auto space-y-4">
               <div className="text-6xl mb-4">🎉🎊🎶</div>
               <h2 className="text-2xl font-bold">No events yet</h2>
@@ -426,9 +426,7 @@ export default function ExplorePage() {
               <Button asChild className='gap-2'>
                 <a href='/create-event'>Create Event</a>
               </Button>
-
             </div>
-
           </Card>
         )
       }

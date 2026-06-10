@@ -4,7 +4,6 @@ import { Badge } from '@/components/ui/badge'
 import { api } from '@/convex/_generated/api'
 import { useConvexQuery } from '@/hooks/use-convex-query'
 import { getCategoryIcon, getCategoryLabel } from '@/lib/data'
-import { useUser } from '@clerk/nextjs'
 import { format } from 'date-fns'
 import { Calendar, CheckCircle, Clock, ExternalLink, Loader2, MapPin, Share2, Ticket, User, Users } from 'lucide-react'
 
@@ -52,8 +51,8 @@ function darkenColor(color, amount) {
 export default function  EventDetailPage()  {
     const params = useParams()
     const router = useRouter()
-    
-    const {user} = useUser();
+
+    const { data: currentUser } = useConvexQuery(api.users.getCurrentUser);
 
     const [showRegisterModal, setShowRegisterModal] = useState(false);
     // Fetch event details
@@ -86,7 +85,7 @@ export default function  EventDetailPage()  {
     
 
     const handleRegister =()=> {
-        if (!user) {
+        if (!currentUser) {
             toast.error("Please sign in to register");
             return;
         }
@@ -107,7 +106,7 @@ export default function  EventDetailPage()  {
 
     const isEventPast = event.endDate < Date.now();
     const isEventFull = event.capacity <= event.registrationCount
-    const isOrganizer = user?.id === event.organizerId;
+    const isOrganizer = currentUser?._id === event.organizerId;
 
     console.log(event.themeColor)
     console.log(darkenColor(event.themeColor, 0.2))
@@ -359,11 +358,13 @@ export default function  EventDetailPage()  {
                 </div>
             </div>
             {/* //  registration Modal */}
-            <RegisterModal
-                isOpen={showRegisterModal}
-                onClose={() => setShowRegisterModal(false)}
-                event={event}
-            />
+            {showRegisterModal && (
+                <RegisterModal
+                    isOpen={showRegisterModal}
+                    onClose={() => setShowRegisterModal(false)}
+                    event={event}
+                />
+            )}
         </div>
     )
 }
