@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect, useMemo } from "react";
+import { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, MapPin, Users, ArrowRight, Loader2 } from "lucide-react";
 import { format } from "date-fns";
@@ -22,9 +22,7 @@ import { CATEGORIES } from "@/lib/data";
 import Autoplay from "embla-carousel-autoplay";
 import EventCard from "@/components/event-card"
 import { Card, CardContent } from "@/components/ui/card";
-import { fr } from "date-fns/locale";
-import { fa } from "zod/v4/locales";
-import { City } from "country-state-city";
+
 
 export default function ExplorePage() {
   const router = useRouter();
@@ -34,16 +32,32 @@ export default function ExplorePage() {
      stopOnMouseEnter: true, 
   }));
 
-  // 1. Fetch user (runs in background)
-  const { data: currentUser } = useConvexQuery(api.users.getCurrentUser);
+  // 1. Fetch user via Next.js API (since Convex ctx.auth is now null)
+  const [currentUser, setCurrentUser] = useState(null);
 
-  // 2. Local reactive state tracking the fallback or chosen location
+  const fetchUser = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      const data = await res.json();
+      if (data.user) {
+        setCurrentUser(data.user);
+      }
+    } catch (error) {
+      console.error("Explore page failed to fetch user session:", error);
+    }
+  }, []);
+
   const [activeLocation, setActiveLocation] = useState({
-    city: "Balgalore Urban",
-    state: "Karnataka",
+    city: "",
+    state: "Karnataka", 
   });
 
-  // 3. Sync local state with database OR fallback to cached guest choices whenever page mounts
+  // 3. Fetch user data on component mount
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]); // fetchUser is stable due to useCallback
+
+  // 4. Sync activeLocation with currentUser data once it's available
   useEffect(() => {
     if (currentUser?.location?.state) {
       setActiveLocation({
@@ -60,6 +74,9 @@ export default function ExplorePage() {
           city: savedCity || "", 
           state: savedState
         });
+      } else {
+        // Fallback if no user and no saved guest location
+        setActiveLocation({ city: "", state: "Karnataka" });
       }
     }
   }, [currentUser]);
@@ -414,7 +431,7 @@ export default function ExplorePage() {
         !loadingPopular && 
         (!featuredEvents || featuredEvents.length === 0 )&& 
         (!localEvents || localEvents.length === 0) &&
-        (popularEvents || popularEvents.length === 0) && (
+        (!popularEvents || popularEvents.length === 0) && (
 
           <Card className="p-12 text-center">
             <div className="max-w-md mx-auto space-y-4">
@@ -437,4 +454,3 @@ export default function ExplorePage() {
    
   )
 }
-

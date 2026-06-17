@@ -4,18 +4,12 @@ import { mutation, query } from "./_generated/server";
 
 export const store = mutation({
     args: {},
-    handler: async (ctx) => { // Keep this to study: One less ")" at the end of the handler block
-    // handler: async (ctx) => new Promise(async (resolve, reject) => {
-    // ... your code here ...
+    handler: async (ctx) => { 
         const identity = await ctx.auth.getUserIdentity();
         if (!identity) {
           throw new Error("Called store without authentication present");    }
 
-        // Check if we've already stored this identity before.
-        // Note: If you don't want to define an index right away, you can use
-        // ctx.db.query("users")
-        //  .filter(q => q.eq(q.field("tokenIdentifier"), identity.tokenIdentifier))
-        //  .unique();
+      
         const user = await ctx.db
           .query("users")
           .withIndex("by_token", (q) =>
@@ -58,27 +52,27 @@ export const store = mutation({
 
 // 1. Create a helper function (not a query/ mutation)
 
-async function getAuthUser(ctx) {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) return null
+// async function getAuthUser(ctx) {
+//   const identity = await ctx.auth.getUserIdentity();
+//   if (!identity) return null
 
  
-  return await ctx.db
-    .query("users")
-    .withIndex("by_token", (q) =>
-      q.eq("tokenIdentifier", identity.tokenIdentifier)
-    )
-    .unique();
-}
+//   return await ctx.db
+//     .query("users")
+//     .withIndex("by_token", (q) =>
+//       q.eq("tokenIdentifier", identity.tokenIdentifier)
+//     )
+//     .unique();
+// }
 
 
 // 2. Simplify getCurrentUser to use the hepler 
 
-export const getCurrentUser = query({
-    handler: async (ctx) => {
-      return await getAuthUser(ctx);
-    }
-})
+// export const getCurrentUser = query({
+//     handler: async (ctx) => {
+//       return await getAuthUser(ctx);
+//     }
+// })
 
 export const completeOnboarding = mutation ({
       args: {
@@ -104,3 +98,10 @@ export const completeOnboarding = mutation ({
         return user._id
       }
 })
+
+export const getById = query({
+  args: { id: v.id("users") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.id);
+  },
+});

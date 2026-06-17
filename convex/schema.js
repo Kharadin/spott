@@ -1,23 +1,19 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { RollerCoaster } from "lucide-react";
 
 
 export default defineSchema({
   // Users table
-  users: defineTable({
-    // Clerk auth
+    users: defineTable({
     email: v.string(),
-    tokenIdentifier: v.string(), // Clerk user ID for auth
+    passwordHash: v.optional (v.string()), // Marked optional for new usersv.string(),
+    unsuccessAttempt: v.optional(v.number()), // Singular to match your schema field
+    lastAttemptTime: v.optional(v.number()), // Marked optional for new users
+    tokenIdentifier: v.string(),
     name: v.string(),
     imageUrl: v.optional(v.string()),
 
-    // Onboarding
     hasCompletedOnboarding: v.boolean(),
-
-    // Attendee preferences (from onboarding)
-
-     // Updated location schema to support nulls
     location: v.optional(
       v.object({
         city: v.optional(v.union(v.string(), v.null())),
@@ -25,18 +21,15 @@ export default defineSchema({
         country: v.string(),
       })
     ),
-    interests: v.optional(v.array(v.string())), // Min 3 categories
-
-    // Organizer tracking (User Subscription)
-    freeEventsCreated: v.number(), // Track free event limit (1 free)
-
-    // Timestamps
+    interests: v.optional(v.array(v.string())),
+    freeEventsCreated: v.number(), 
     createdAt: v.number(),
     updatedAt: v.number(),
-    // Role
     role: v.optional(v.string()),
-  }).index("by_token", ["tokenIdentifier"]), // Primary auth lookup
-
+  })
+    .index("by_token", ["tokenIdentifier"])  
+    .index("by_email", ["email"]),
+    
   // Events table
   events: defineTable({
     title: v.string(),
@@ -140,5 +133,6 @@ export default defineSchema({
     .index("by_event", ["eventId"])
     .index("by_user", ["userId"])
     .index("by_event_user", ["eventId", "userId"])
-    .index("by_qr_code", ["qrCode"]),
+    .index("by_qr_code", ["qrCode"])
 });
+  

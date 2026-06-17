@@ -23,7 +23,7 @@ const SearchLocationBar = () => {
  const [selectedCity, setSelectedCity] = useState("")
  
  const {data: currentUser, isLoading} = useConvexQuery(
-   api.users.getCurrentUser
+   api.users.getById
  )
  const {mutate: updateLocation} = useConvexMutation(
    api.users.completeOnboarding

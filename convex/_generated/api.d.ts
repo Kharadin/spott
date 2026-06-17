@@ -9,6 +9,7 @@
  */
 
 import type * as admin from "../admin.js";
+import type * as auth from "../auth.js";
 import type * as dashboard from "../dashboard.js";
 import type * as datefix from "../datefix.js";
 import type * as events from "../events.js";
@@ -30,6 +31,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
+  auth: typeof auth;
   dashboard: typeof dashboard;
   datefix: typeof datefix;
   events: typeof events;

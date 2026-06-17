@@ -66,7 +66,6 @@ export const toggleCancelEvent = mutation({
   },
 });
 
-
 // Admin-only mutation to delete an event
 export const adminDeleteEvent = mutation({
   args: { id: v.id("events") },
@@ -84,8 +83,6 @@ export const adminDeleteEvent = mutation({
     }
   },
 });
-
-
 
 export const getAdminEventsPage = query({
   args: {
