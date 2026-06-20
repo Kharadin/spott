@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
 
-/**
- * Handles user logout by clearing the secure session cookie.
- */
 export async function POST() {
   try {
     const response = NextResponse.json({
@@ -10,7 +7,6 @@ export async function POST() {
       message: "Logged out successfully",
     });
 
-    // Clear the session_token cookie by setting maxAge to 0
     response.cookies.set({
       name: "session_token",
       value: "",
@@ -18,7 +14,7 @@ export async function POST() {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 0,
+      maxAge: 0, // Clears instantly
     });
 
     return response;

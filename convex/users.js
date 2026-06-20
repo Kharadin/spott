@@ -74,8 +74,26 @@ export const store = mutation({
 //     }
 // })
 
+
+export const getById = query({
+  args: { id: v.optional(v.string()) }, // Accept standard string from Next.js JWT payload
+  handler: async (ctx, args) => {
+    if (!args.id) { return null; }
+    // Safely cast string back into a strict Convex ID object
+    const normalizedId = ctx.db.normalizeId("users", args.id);
+    
+    if (!normalizedId) {
+      return null;
+    }
+    
+    return await ctx.db.get(normalizedId);
+  },
+});
+
+
 export const completeOnboarding = mutation ({
       args: {
+        id: v.string(),
         location: v.object ({
            // Allows string, null, or completely omitted (undefined)
           city: v.optional(v.union(v.string(), v.null())),
@@ -85,23 +103,17 @@ export const completeOnboarding = mutation ({
         interests: v.array(v.string()), // Min 3 categories
       }, 
       handler: async (ctx, args)=> {
-         const user = await getAuthUser(ctx);
+         const userId = ctx.db.normalizeId("users", args.id);
+         if (!userId) throw new Error("?Must be logged to complete onboarding?");
 
-         if (!user) throw new Error("?Must be logged to complete onboarding?");
 
-        await ctx.db.patch(user._id, {
+        await ctx.db.patch(userId, {
           hasCompletedOnboarding: true,
           location: args.location,
           interests: args.interests,
           updatedAt: Date.now(),
         })
-        return user._id
+        return { success: true, message: "Onboarding completed successfully" };
       }
 })
 
-export const getById = query({
-  args: { id: v.id("users") },
-  handler: async (ctx, args) => {
-    return await ctx.db.get(args.id);
-  },
-});

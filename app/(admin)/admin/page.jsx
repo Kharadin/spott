@@ -8,6 +8,7 @@ import EventCard from "@/components/event-card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import {useRouter} from 'next/navigation'
+import { useAuth } from "@/app/context/AuthContext";
 
 export default function AdminDashboardPage() {
   const [showPast, setShowPast] = useState(false);
@@ -31,14 +32,21 @@ export default function AdminDashboardPage() {
   // Convert HTML date picker YYYY-MM-DD string safely into Unix milliseconds timestamp
   const targetTimestamp = new Date(dateString).getTime();
 
+  // 🔑 Pull the current user profile from your custom Auth Context
+  const {user, isLoading } = useAuth();
+
   // Call our index-optimized query
-  const pageData = useQuery(api.admin.getAdminEventsPage, {
-    skipCount: currentPage * ITEMS_PER_PAGE,
-    limit: ITEMS_PER_PAGE,
-    showPast,
-    selectedDate: targetTimestamp,
-    timelineFilterField: /** @type {"startDate" | "endDate"} */ (timelineField),
-  });
+  // FIX: Evaluate the entire argument block. If user._id doesn't exist yet, skip the whole query execution.
+  const pageData = useQuery(api.admin.getAdminEventsPage, 
+    user?._id 
+    ?  {
+      userId: user._id,
+      skipCount: currentPage * ITEMS_PER_PAGE,
+      limit: ITEMS_PER_PAGE,
+      showPast,
+      selectedDate: targetTimestamp,
+      timelineFilterField: /** @type {"startDate" | "endDate"} */ (timelineField),
+    } : "skip");
 
   const togglePublish = useMutation(api.admin.togglePublishEvent);
   const toggleReview = useMutation(api.admin.toggleReviewEvent);
@@ -150,7 +158,7 @@ export default function AdminDashboardPage() {
                 <Button
                   size="xs"
                   className={`text-[11px] px-1 text-white   ${!event.reviewed ? "bg-rose-500 hover:bg-rose-700" : "bg-sky-600 hover:bg-sky-800"}`}
-                  onClick={() => toggleReview({ id: event._id, review:   !event.reviewed })}
+                  onClick={() => toggleReview({ userId: user._id, id: event._id, review:   !event.reviewed })}
                 >
                   {event.reviewed ? "Un-Review" : "Review"}
                 </Button>
@@ -158,7 +166,7 @@ export default function AdminDashboardPage() {
                 <Button
                   size="xs"
                   className={`text-[11px] px-1 text-white ${!event.published ? "bg-amber-600 hover:bg-amber-700" : "bg-emerald-600 hover:bg-emerald-700"}`}
-                  onClick={() => togglePublish({ id: event._id, publish: !event.published })}
+                  onClick={() => togglePublish({ userId: user._id, id: event._id, publish: !event.published })}
                 >
                   {event.published ? "Unpublish" : "Publish"}
                 </Button>
@@ -167,7 +175,7 @@ export default function AdminDashboardPage() {
                   size="xs"
                   className="text-[11px]  px-1"
                   variant={!event.cancelled ? "default" : "destructive"}
-                  onClick={() => toggleCancel({ id: event._id, cancel: !event.cancelled })}
+                  onClick={() => toggleCancel({ userId: user._id, id: event._id, cancel: !event.cancelled })}
                 >
                   {event.cancelled ? "Re-Activate" : "Cancel"}
                 </Button>

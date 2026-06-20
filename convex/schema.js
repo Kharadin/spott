@@ -4,7 +4,7 @@ import { v } from "convex/values";
 
 export default defineSchema({
   // Users table
-    users: defineTable({
+  users: defineTable({
     email: v.string(),
     passwordHash: v.optional (v.string()), // Marked optional for new usersv.string(),
     unsuccessAttempt: v.optional(v.number()), // Singular to match your schema field

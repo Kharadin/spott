@@ -3,7 +3,6 @@ import { jwtVerify } from "jose";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 
-// Initialize Convex client
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL);
 
 export async function GET(request) {
@@ -17,19 +16,25 @@ export async function GET(request) {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
 
-    // Fetch the actual record from Convex to get location, interests, etc.
     const dbUser = await convex.query(api.users.getById, { id: payload.userId });
 
     if (!dbUser) {
-      return NextResponse.json({ user: null }, { status: 200 });
+      // Create response and drop invalid cookie cleanly across the whole domain
+      const response = NextResponse.json({ user: null }, { status: 200 });
+      response.cookies.set({ name: "session_token", value: "", path: "/", maxAge: 0 });
+      return response;
     }
 
-    return NextResponse.json({ user: dbUser }, { status: 200 });
+    // Strip password hashes out so they never touch client-side browsers
+    const { passwordHash, ...safeUserData } = dbUser;
+
+    return NextResponse.json({ user: safeUserData }, { status: 200 });
   } catch (error) {
     console.error("Error fetching user in /api/auth/me:", error);
-    // If the token is invalid or expired, clear the cookie
+    
     const response = NextResponse.json({ user: null }, { status: 200 });
-    response.cookies.delete("session_token");
+    // CRITICAL FIX: Explicit path target ensures cookie drops correctly
+    response.cookies.set({ name: "session_token", value: "", path: "/", maxAge: 0 });
     return response;
   }
 }

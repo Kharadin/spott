@@ -12,7 +12,7 @@ import { CalendarIcon, Crown, Loader2, Sparkles } from "lucide-react";
 import { useConvexMutation, useConvexQuery } from "@/hooks/use-convex-query";
 import { api } from "../../../convex/_generated/api";
 import { toast } from "sonner";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth } from "@/app/context/AuthContext";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,11 +82,18 @@ const CreateEvent = () => {
   // const { has } = useAuth();
   // const hasPro = has?.({ plan: "pro" });
 
-  const { data: currentUser } = useConvexQuery(api.users.getCurrentUser);
+  // const { data: currentUser } = useConvexQuery(api.users.getCurrentUser);
+  const { user : currentUser, isLoading : userLoading, refreshUser } = useAuth();
+
 
   const [animatedPlaceholder, setAnimatedPlaceholder] = useState("");
   // Safely default createFormBlocked to false if data is still loading/undefined
-  const { data: createFormBlocked = false } = useConvexQuery(api.events.checkLimitForCreateEvent);
+  // Use a ternary or 'skip' to ensure it doesn't try to read currentUser._id before it exists.
+  const  createFormBlocked  = useConvexQuery(
+                api.events.checkLimitForCreateEvent,
+                currentUser?._id ? {userId: currentUser._id} : "skip"
+              ) ?? false; // Safely default to false
+
 
   useEffect(() => {
       // If data is still loading or user is not blocked, reset placeholder immediately
@@ -197,6 +204,7 @@ const coverImage = watch("coverImage");
     
 
         await createEvent({
+          userId: currentUser._id,
           title: data.title,
           description: data.description,
           category: data.category,

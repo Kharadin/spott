@@ -1,5 +1,4 @@
 
-import { internal } from "./_generated/api";
 import {api} from "./_generated/api";
 import { mutation, query, action } from "./_generated/server";
 import {  v } from "convex/values";
@@ -13,7 +12,7 @@ import {txUpdateCounter} from "./admin";
 // 1. REUSABLE DB LOGIC (PURE JAVASCRIPT HELPER)
 // ==========================================
 // Fast, local database reader. No nested query or auth overhead.
-async function  checkUnreviewedOrUnpublised  (ctx, userId) {
+async function  checkUnreviewedOrUnpublished  (ctx, userId) {
         try {            
             // Fetch up to 3 unreviewed events.
             const unreviewedEvents = await ctx.db 
@@ -45,25 +44,39 @@ async function  checkUnreviewedOrUnpublised  (ctx, userId) {
 }
 // 2. STANDALONE QUERY (FOR FRONTEND UI)
 // ==========================================
-export const checkLimitForCreateEvent = query ({
-    args: {},
-    handler: async (ctx) => {
-        try {
-            const user = await ctx.runQuery(internal.users.getCurrentUser);
-            if (!user) throw new Error("Пользователь не авторизован");
-            
-            // Call the internal helper function    
-            return await checkUnreviewedOrUnpublised(ctx, user._id)
-        } catch (error) {
-              // Safely pass only the text message to keep Convex types stable
-                throw new Error(error instanceof Error ? error.message : String(error));
-                // throw new Error(error.message );
-        }
-    }
-})
 
-export const createEvent = mutation ({
+
+export const checkLimitForCreateEvent = query({
+  // 1. Explicitly require the user ID as a string from the client
+  args: { userId: v.string() }, 
+  handler: async (ctx, args) => {
+    try {
+      // 2. Safely cast the string ID into a valid Convex Document ID
+      const userId = ctx.db.normalizeId("users", args.userId);
+      if (!userId) {
+        throw new Error("Invalid user ID format");
+      }   
+
+      // 3. Direct DB lookup using the casted internal ID
+      const user = await ctx.db.get(userId);
+      if (!user) {
+        throw new Error("User profile not found");
+      }
+      
+      // 4. Execute your internal helper function passing down the internal ID
+      // NOTE: double-check if your helper function is spelled 'checkUnreviewedOrUnpublished' (with an 'h')
+      return await checkUnreviewedOrUnpublished(ctx, user._id);
+      
+    } catch (error) {
+      // Safely extract the message string to keep Convex errors clean
+      throw new Error(error instanceof Error ? error.message : String(error));
+    }
+  }
+});
+
+export const createEvent = mutation({
   args: {
+    userId: v.string(), // Extracted first from your frontend context
     title: v.string(),
     description: v.string(),
     category: v.string(),
@@ -82,60 +95,144 @@ export const createEvent = mutation ({
     ticketPrice: v.optional(v.number()),
     coverImage: v.optional(v.string()),
     themeColor: v.optional(v.string()),
-    // hasPro: v.optional(v.boolean()),
+  }, 
+  handler: async (ctx, args) => {
+    // 1. Destructure 'userId' out, leaving all pure event fields inside 'eventDetails'
+    const { userId: rawUserId, ...eventDetails } = args;
 
-    }, 
+    // 2. Safely cast the string ID into a valid Convex Document ID
+    const userId = ctx.db.normalizeId("users", rawUserId);
+    if (!userId) {
+      throw new Error("Invalid user ID format");
+    }
+
+    try {
+      const user = await ctx.db.get(userId);
+      if (!user) {
+        throw new Error("User profile not found");
+      }
+
+      // 3. Check for platform usage blocks
+      const isBlocked = await checkUnreviewedOrUnpublished(ctx, user._id);
+      if (isBlocked) {
+        throw new Error("You already have 2 unreviewed or unpublished events.");
+      }
+
+      // 4. Generate URL slug from title securely
+      const slug = eventDetails.title
+        .toLowerCase()  
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+
+
+          // 1. Establish your fallback brand default color
+      const defaultColor = "#3b82f6"; // e.g., a nice clean Tailwind blue
+      const themeColor = eventDetails.themeColor || defaultColor;
+
+      // 5. Database Insertion (using safe eventDetails instead of raw ...args)
+      const eventId = await ctx.db.insert("events", { 
+        ...eventDetails, // Contains title, description, capacity, etc. (No raw userId string!)
+        themeColor, // overwrite with safe themeColor
+        slug: `${slug}-${Date.now()}`,
+        organizerId: user._id, // Saved as your strongly-typed foreign key object
+        organizerName: user.name,
+        registrationCount: 0,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        reviewed: false,
+        published: false,
+        cancelled: false
+      });
+   
+      // 6. Async side-tasks
+      await ctx.scheduler.runAfter(0, api.events.sendAdminNotification, { 
+        eventTitle: eventDetails.title 
+      });
+
+      return eventId;
+    } catch (error) {
+      throw new Error(`Failed to create event: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  },
+});
+
+// Get event by slug
+export const getEventBySlug = query ({
+    args: {slug: v.string()},
     handler: async (ctx, args) => {
-      
-        try {
-            const user = await ctx.runQuery(internal.users.getCurrentUser);
-            if (!user) throw new Error("User not authorized");
-              
-            // Reuse the local JS function directly 
-            const isBlocked = await checkUnreviewedOrUnpublised(ctx, user._id);
-            if (isBlocked) throw new Error("You already have 2 unreviewed or unpublished events.");
+        const event = await ctx.db
+        .query("events")
+        .withIndex("by_slug", (q)=> q.eq("slug", args.slug))
+        .unique();
+        return event
+    }
+})
 
-            const themeColor = args.themeColor
-            // const themeColor = args.hasPro ? args.themeColor : defaultColor;
-            // GENERATE SLUG from title
-            const slug =    args.title
-                .toLowerCase()  
-                .replace(/[^a-z0-9]+/g, "-")
-                .replace(/(^-|-$)/g, "");
+// Get Events by organizer
+export const getMyEvents = query ({
+    args: {userId: v.string()},
+    handler: async (ctx, args) => {
+          // 2. Safely cast the string ID into a valid Convex Document ID
+      const userId = ctx.db.normalizeId("users", args.userId);
+      if (!userId) {
+        throw new Error("Invalid user ID format");
+      }   
+       // 2. Optimized: Skip fetching the profile entirely! 
+    // Use the normalized 'userId' variable directly in the query loop.
+        const events = await ctx.db
+        .query("events")
+        .withIndex("by_organizer", (q)=> q.eq("organizerId", userId)) // And this way on,  change the functions also
+        .order("desc")
+        .collect();
+        return events
+    }
+})
+// Delete event
+export const deleteEvent = mutation ({
+    args: {userId: v.string(),
+        eventId: v.id("events")},
+    handler: async (ctx, args) =>  {
+           // 2. Safely cast the string ID into a valid Convex Document ID
+      const userId = ctx.db.normalizeId("users", args.userId);
+      if (!userId) {
+        throw new Error("Invalid user ID format");
+      }   
 
-        const eventId = await ctx.db.insert("events", { 
-            ...args,
-            themeColor,
-            slug: `${slug}-${Date.now()}`,
-            organizerId: user._id,
-            organizerName: user.name,
-            registrationCount: 0,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-            reviewed: false,
-            published: false,
-            cancelled: false
-
-        });
-       // Update users's free event count
-    //    await ctx.db.patch(user._id, {
-    //     freeEventsCreated: user.freeEventsCreated + 1
-    //    })
-
-       // Update category count NO, since we only account the published, so it should be added when toggling "published" in the admin'
-        //    await txUpdateCounter(ctx, args.category, 1);
-
-        // Schedule a server action to send an email to the admin
-        await ctx.scheduler.runAfter(0, api.events.sendAdminNotification, { eventTitle: args.title });
-
-        return await eventId;
-        } catch (error) {
-            throw new Error (`Failed to create event: ${error.message}`)
+        const user = await ctx.db.get(userId);
+        if (!user) {
+            throw new Error ("User identity profile not found")
         }
+        const event = await ctx.db.get(args.eventId);
+        if (!event) {
+            throw new Error ("Event not found")
+        }
+        //  Check if the user is the organizer. 
+       if (event.organizerId !== user._id) {
+        throw new Error ("You are not authorized to delete this event")
+        } 
+        // Delete the registrations first
+        const registrations = await ctx.db
+        .query("registrations")
+        .withIndex("by_event", (q)=> q.eq("eventId", args.eventId))
+        .collect();
+        for (const reg of registrations) {
+            await ctx.db.delete(reg._id);
+        }
+        // Delete the event
+        await ctx.db.delete(args.eventId);
 
+        // Update the category count (if published)
+        if (event.published) {
+        await txUpdateCounter(ctx, event.category, -1); }
 
-    },
-
+        // If user has some freeEventsCreated, then decrease their num by 1 (I: we did not even check it's a free event that's deleted, but Ok, it's learing material)
+        if (user.freeEventsCreated > 0) {
+            await ctx.db.patch(user._id, {
+                freeEventsCreated: user.freeEventsCreated - 1   
+            })
+        }
+        return {success: true};
+    }
 })
 
 export const sendAdminNotification = action ({
@@ -160,75 +257,6 @@ export const sendAdminNotification = action ({
     }
 })
 
-
-// Get event by slug
-export const getEventBySlug = query ({
-    args: {slug: v.string()},
-    handler: async (ctx, args) => {
-        const event = await ctx.db
-        .query("events")
-        .withIndex("by_slug", (q)=> q.eq("slug", args.slug))
-        .unique();
-        return event
-    }
-})
-
-// Get Events by organizer
-export const getMyEvents = query ({
-    handler: async (ctx) => {
-        const user=  await ctx.runQuery(internal.users.getCurrentUser)
-        const events = await ctx.db
-        .query("events")
-        .withIndex("by_organizer", (q)=> q.eq("organizerId", user._id))
-        .order("desc")
-        .collect();
-        return events
-    }
-})
-// Delete event
-export const deleteEvent = mutation ({
-    args: {eventId: v.id("events")},
-    handler: async (ctx, args) =>  {
-        const user = await ctx.runQuery(internal.users.getCurrentUser);
-
-        const event = await ctx.db.get(args.eventId);
-        if (!event) {
-            throw new Error ("Event not found")
-        }
-
-        //  Check if the user is the organizer. 
-       if (event.organizerId !== user._id) {
-        throw new Error ("You are not authorized to delete this event")
-        } 
-        // Delete the registrations first
-
-        const registrations = await ctx.db
-        .query("registrations")
-        .withIndex("by_event", (q)=> q.eq("eventId", args.eventId))
-        .collect();
-        for (const reg of registrations) {
-            await ctx.db.delete(reg._id);
-        }
-        // Delete the event
-        await ctx.db.delete(args.eventId);
-
-        // Update the category count (if published)
-        if (event.published) {
-        await txUpdateCounter(ctx, event.category, -1); }
-
-
-        // If user has some freeEventsCreated, then decrease their num by 1 (we did not even check it's a free event that's deleted, but Ok, it's learing material)
-        if (user.freeEventsCreated > 0) {
-            await ctx.db.patch(user._id, {
-                freeEventsCreated: user.freeEventsCreated - 1   
-            })
-        }
-
-        
-
-        return {success: true};
-    }
-})
 
 // 3. Update an Event (Handles category shifts) Looks Ok.
 export const updateEventCategory = mutation({

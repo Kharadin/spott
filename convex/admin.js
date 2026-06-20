@@ -21,18 +21,24 @@ export async function txUpdateCounter(ctx, category, amount) {
 
 // 1. Toggle Review Status
 export const toggleReviewEvent = mutation({
-  args: { id: v.id("events"), review: v.boolean() },
+  args: { userId: v.string(),
+    id: v.id("events"), review: v.boolean() },
   handler: async (ctx, args) => {
-    await checkAdminStatus(ctx);
+    // NOrmalize string into a strict Convex ID object
+    const userId = ctx.db.normalizeId("users", args.userId);
+    await checkAdminStatus(ctx, userId );
     await ctx.db.patch(args.id, { reviewed: args.review });
   }
 });
 
 // 2. Toggle Publish Status (Accounts for cancellation status)
 export const togglePublishEvent = mutation({
-  args: { id: v.id("events"), publish: v.boolean() },
+  args: { userId: v.string(),
+    id: v.id("events"), publish: v.boolean() },
   handler: async (ctx, args) => {
-    await checkAdminStatus(ctx);
+     // NOrmalize string into a strict Convex ID object
+    const userId = ctx.db.normalizeId("users", args.userId);
+    await checkAdminStatus(ctx, userId );
 
     const event = await ctx.db.get(args.id);
     if (!event || !!event.published === args.publish) return;
@@ -49,9 +55,12 @@ export const togglePublishEvent = mutation({
 
 // 3. Toggle Cancelled Status (Updates category counters dynamically)
 export const toggleCancelEvent = mutation({
-  args: { id: v.id("events"), cancel: v.boolean() },
+  args: { userId: v.string(),
+    id: v.id("events"), cancel: v.boolean() },
   handler: async (ctx, args) => {
-    await checkAdminStatus(ctx);
+     // NOrmalize string into a strict Convex ID object
+    const userId = ctx.db.normalizeId("users", args.userId);
+    await checkAdminStatus(ctx, userId );
 
     const event = await ctx.db.get(args.id);
     if (!event || !!event.cancelled === args.cancel) return;
@@ -68,9 +77,12 @@ export const toggleCancelEvent = mutation({
 
 // Admin-only mutation to delete an event
 export const adminDeleteEvent = mutation({
-  args: { id: v.id("events") },
+  args: {
+    userId: v.string(), id: v.id("events") },
   handler: async (ctx, args) => {
-    await checkAdminStatus(ctx);
+     // NOrmalize string into a strict Convex ID object
+    const userId = ctx.db.normalizeId("users", args.userId);
+    await checkAdminStatus(ctx, userId );
 
     const event = await ctx.db.get(args.id);
     if (!event) return;
@@ -86,6 +98,7 @@ export const adminDeleteEvent = mutation({
 
 export const getAdminEventsPage = query({
   args: {
+    userId: v.string(),
     skipCount: v.number(),
     limit: v.number(),
     showPast: v.boolean(),
@@ -93,7 +106,9 @@ export const getAdminEventsPage = query({
     timelineFilterField: v.union(v.literal("startDate"), v.literal("endDate")),
   },
   handler: async (ctx, args) => {
-    await checkAdminStatus(ctx);
+     // NOrmalize string into a strict Convex ID object
+    const userId = ctx.db.normalizeId("users", args.userId);
+    await checkAdminStatus(ctx, userId );
 
     let dbQuery;
 

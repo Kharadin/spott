@@ -2,9 +2,10 @@ import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 import Header from "@/components/header";
 import { ConvexClientProvider } from "./ConvexClientProvider";
-import { ClerkProvider } from "@clerk/nextjs";
-import { shadesOfPurple } from "@clerk/themes";
+
+
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "./context/AuthContext";
 
 export const metadata = {
   title: "Spott",
@@ -17,8 +18,8 @@ export default function RootLayout({ children }) {
       <body className={`bg-linear-to-b from-blue-950 via-zinc-700 to-stone-600 text-white`}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange >       
           {/* Header */}
-          <ClerkProvider appearance={{theme: shadesOfPurple,}}>
-
+        
+        <AuthProvider>
           <ConvexClientProvider>
             <Header />   
             <main className="relative min-h-screen container mx-auto pt-38 md:pt-23">
@@ -46,7 +47,7 @@ export default function RootLayout({ children }) {
               <Toaster position= 'top-center' richColors />
             </main>
           </ConvexClientProvider>
-          </ClerkProvider>
+        </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

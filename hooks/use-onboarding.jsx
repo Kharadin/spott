@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useConvexQuery } from "./use-convex-query";
 import { api } from "@/convex/_generated/api";
+import { useAuth } from "@/app/context/AuthContext";
 
 // Pages that require onboarding (attendee-centered)
 const ATTENDEE_PAGES = ["/explore", "/events", "/my-tickets", "/profile"];
@@ -13,9 +14,8 @@ export function useOnboarding() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const { data: currentUser, isLoading } = useConvexQuery(
-    api.users.getCurrentUser
-  );
+ 
+   const { user : currentUser, isLoading } = useAuth();
 
   useEffect(() => {
     if (isLoading || !currentUser) return;

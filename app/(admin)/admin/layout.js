@@ -5,9 +5,10 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useAuth } from "@/app/context/AuthContext";
 
 export default function AdminLayout({ children }) {
-  const user = useQuery(api.users.getCurrentUser);
+ const { user, isLoading, refreshUser } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
