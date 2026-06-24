@@ -6,7 +6,7 @@ import { Loader2, Ticket, CheckCircle } from "lucide-react";
 import { useConvexMutation } from "@/hooks/use-convex-query";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@/app/context/AuthContext";
 
 import {
   Dialog,
@@ -22,10 +22,10 @@ import { Separator } from "@/components/ui/separator";
 
 export default function RegisterModal({ event, isOpen, onClose }) {
   const router = useRouter();
-  const { user } = useUser();
-  const [name, setName] = useState(user?.fullName || "");
+  const { user, token } = useAuth();
+  const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(
-    user?.primaryEmailAddress?.emailAddress || ""
+    user?.email || ""
   );
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -43,6 +43,7 @@ export default function RegisterModal({ event, isOpen, onClose }) {
 
     try {
       await registerForEvent({
+        token,
         eventId: event._id,
         attendeeName: name,
         attendeeEmail: email,

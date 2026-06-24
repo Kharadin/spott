@@ -1,15 +1,17 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { verifyIdentity } from "./auth.helpers";
 
 export const getEventDashboard = query({
-  // 1. Unified Argument Blueprint: userId is listed first
+  // 1. Unified Argument Blueprint: token is listed first
   args: { 
-    userId: v.string(),
+    token: v.string(),
     eventId: v.id("events")
   }, 
   handler: async (ctx, args) => {
+    const rawUserId = await verifyIdentity(args.token);
     // 2. Cast incoming string into a valid Convex internal format
-    const userId = ctx.db.normalizeId("users", args.userId);
+    const userId = ctx.db.normalizeId("users", rawUserId);
     if (!userId) {
       throw new Error("Invalid user identity profile");
     }
@@ -88,14 +90,15 @@ export const getEventDashboard = query({
 
 // Delete event
 export const deleteEvent = mutation({
-  // 1. Unified Argument Blueprint: userId is listed first
+  // 1. Unified Argument Blueprint: token is listed first
   args: {
-    userId: v.string(),
+    token: v.string(),
     eventId: v.id("events")
   },
   handler: async (ctx, args) => {
+    const rawUserId = await verifyIdentity(args.token);
     // 2. Cast user ID string safely
-    const userId = ctx.db.normalizeId("users", args.userId);
+    const userId = ctx.db.normalizeId("users", rawUserId);
     if (!userId) {
       throw new Error("Invalid user authentication credentials");
     }

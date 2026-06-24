@@ -27,10 +27,12 @@ function Carousel({
   children,
   ...props
 }) {
+  // FIX: Explicitly pass plugins array directly to Embla hook here
   const [carouselRef, api] = useEmblaCarousel({
     ...opts,
     axis: orientation === "horizontal" ? "x" : "y",
-  }, plugins)
+  }, plugins || [])
+  
   const [canScrollPrev, setCanScrollPrev] = React.useState(false)
   const [canScrollNext, setCanScrollNext] = React.useState(false)
 
@@ -107,6 +109,7 @@ function CarouselContent({
   const { carouselRef, orientation } = useCarousel()
 
   return (
+    // This div captures the embla engine ref
     <div
       ref={carouselRef}
       className="overflow-hidden"
@@ -155,13 +158,16 @@ function CarouselPrevious({
       data-slot="carousel-previous"
       variant={variant}
       size={size}
-      className={cn("absolute size-10 rounded-full bg-white/10    border-white/20 text-white shadow-md hover:bg-white/40 hover:text-white" ,  
-
+      className={cn("absolute size-10 rounded-full bg-white/10 border-white/20 text-white shadow-md hover:bg-white/40 hover:text-white" ,  
         orientation === "horizontal"
         ? " top-1/2 -left-12 -translate-y-1/2"
         : " left-1/2 -top-12 -translate-x-1/2 rotate-90", className)}
       disabled={!canScrollPrev}
-      onClick={scrollPrev}
+      // FIX: Added invocation parentheses () to both function executions
+      onClick={(e) => {
+        e.stopPropagation();
+        scrollPrev();
+      }}
       {...props}>
       <ArrowLeft  className="size-5"  />
       <span className="sr-only">Previous slide</span>
@@ -182,12 +188,16 @@ function CarouselNext({
       data-slot="carousel-next"
       variant={variant}
       size={size}
-      className={cn("absolute size-10 rounded-full bg-white/10    border-white/20 text-white shadow-md hover:bg-white/40 hover:text-white" ,  
+      className={cn("absolute size-10 rounded-full bg-white/10 border-white/20 text-white shadow-md hover:bg-white/40 hover:text-white" ,  
          orientation === "horizontal"
         ? "top-1/2 -right-12 -translate-y-1/2"
         : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90", className)}
       disabled={!canScrollNext}
-      onClick={scrollNext}
+      // FIX: Added stopPropagation block here too
+      onClick={(e) => {
+        e.stopPropagation();
+        scrollNext();
+      }}
       {...props}>
       <ArrowRight className="size-5"/>
       <span className="sr-only">Next slide</span>

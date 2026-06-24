@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { api } from '@/convex/_generated/api';
 import { useConvexMutation, useConvexQuery } from '@/hooks/use-convex-query';
+import { useAuth } from '@/app/context/AuthContext';
 import { ArrowLeft, Loader2, Calendar, MapPin, Eye, QrCode, Users, CheckCircle, TrendingUp, Search, Download, Plus, Trash2} from 'lucide-react';
 import { notFound, useParams, useRouter } from 'next/navigation';
 import React, { useState } from 'react'
@@ -21,6 +22,7 @@ import QRScannerModal from '../_components/qr-scanner-modal';
 const EventDashboard = () => {
     const params = useParams();
     const router = useRouter();
+    const { token } = useAuth();
 
     const eventId = params.eventId;
 
@@ -30,13 +32,13 @@ const EventDashboard = () => {
 
     const {data: dashboardData, isLoading} = useConvexQuery (
         api.dashboard.getEventDashboard,
-            {eventId}
+        token ? {token, eventId} : "skip"
     )
     
     //fetch registratoins
     const {data: registrations, isLoading: loadingRegistrations} = useConvexQuery(
         api.registrations.getEventRegistrations,
-        {eventId}
+        token ? {token, eventId} : "skip"
     )
     // Delete event mutation
     // [  my:] it's events.js instead of dashboard
@@ -45,7 +47,7 @@ const EventDashboard = () => {
         const confimed = window.confirm("Are you sure you want to delete this event? This action cannot be undone and will permanently delete the event and all the associated registrations")
         if (!confimed) return;
         try {
-            await deleteEvent({eventId});
+            await deleteEvent({token, eventId});
             toast.success("Event deleted successfully")
             router.push("/my-events")
         } catch (error){

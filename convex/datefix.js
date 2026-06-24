@@ -1,6 +1,6 @@
 import { internalMutation } from "./_generated/server";
 
-export const setMonthsToJune = internalMutation({
+export const setMonthsToAugust = internalMutation({
   args: {},
   handler: async (ctx) => {
     const docs = await ctx.db.query("events").collect();
@@ -9,13 +9,13 @@ export const setMonthsToJune = internalMutation({
 
       if (doc.startDate !== undefined) {
         const date = new Date(doc.startDate);
-        date.setMonth(5); // June (0-indexed)
+        date.setMonth(7); // Aug (0-indexed)
         updatedFields.startDate = date.getTime();
       }
 
       if (doc.endDate !== undefined) {
         const date = new Date(doc.endDate);
-        date.setMonth(5);
+        date.setMonth(7);
         updatedFields.endDate = date.getTime();
       }
 

@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
+import { verifyIdentity } from "./auth.helpers";
 
 
 const generateQRCode = () => {
@@ -11,15 +12,16 @@ const generateQRCode = () => {
 
 export const registerForEvent = mutation({
   args: {
-    // 1. Unified Argument Blueprint: userId listed first
-    userId: v.string(),
+    // 1. Unified Argument Blueprint: token listed first
+    token: v.string(),
     eventId: v.id("events"),
     attendeeName: v.string(),
     attendeeEmail: v.string(),
   },
   handler: async (ctx, args) => {
+    const rawUserId = await verifyIdentity(args.token);
     // 2. Safely cast the string ID into a valid Convex Document ID
-    const userId = ctx.db.normalizeId("users", args.userId);
+    const userId = ctx.db.normalizeId("users", rawUserId);
     if (!userId) {
       throw new Error("Invalid user identity format");
     }
@@ -75,38 +77,48 @@ export const registerForEvent = mutation({
 });
 
 
-
 export const checkRegistration = query({
   args: { 
-    // 1. Unified Argument Blueprint: userId listed first
-    userId: v.string(),
-    eventId: v.id("events") 
+    eventId: v.id("events"),          // Strictly required to execute the query
+    token: v.optional(v.string())     // Optional for unauthenticated visitors
   },
   handler: async (ctx, args) => {
-    // 2. Safely cast the string ID into a valid Convex Document ID
-    const userId = ctx.db.normalizeId("users", args.userId);
-    if (!userId) return null;
+    // 1. If no token is provided, they are not registered. Return null safely.
+    if (!args.token) {
+      return null; 
+    }
 
-    // 3. Fast index lookup using the normalized ID object directly
-    const registration = await ctx.db
-      .query("registrations")
-      .withIndex("by_event_user", (q) =>
-        q.eq("eventId", args.eventId).eq("userId", userId)  
-      )
-      .unique();
+    try {
+      const rawUserId = await verifyIdentity(args.token);
+      
+      const userId = ctx.db.normalizeId("users", rawUserId);
+      if (!userId) return null;
 
-    return registration;
+      const registration = await ctx.db
+        .query("registrations")
+        .withIndex("by_event_user", (q) =>
+          q.eq("eventId", args.eventId).eq("userId", userId)  
+        )
+        .unique();
+
+      return registration;
+    } catch (error) {
+      console.error("Auth error in checkRegistration:", error.message);
+      return null;
+    }
   }
 });
 
 
+
 export const getMyRegistrations = query({
   args: { 
-    userId: v.string() 
+    token: v.string() 
   },
   handler: async (ctx, args) => {
+    const rawUserId = await verifyIdentity(args.token);
     // 1. Safely cast the string ID into a valid Convex Document ID
-    const userId = ctx.db.normalizeId("users", args.userId);
+    const userId = ctx.db.normalizeId("users", rawUserId);
     if (!userId) return [];
 
     // 2. Query registrations using the normalized ID directly
@@ -130,13 +142,14 @@ export const getMyRegistrations = query({
 
 export const cancelRegistration = mutation({
   args: { 
-    // 1. Unified Argument Blueprint: userId listed first
-    userId: v.string(),
+    // 1. Unified Argument Blueprint: token listed first
+    token: v.string(),
     registrationId: v.id("registrations") 
   },
   handler: async (ctx, args) => {
+    const rawUserId = await verifyIdentity(args.token);
     // 2. Safely cast the string ID into a valid Convex Document ID
-    const userId = ctx.db.normalizeId("users", args.userId);
+    const userId = ctx.db.normalizeId("users", rawUserId);
     if (!userId) {
       throw new Error("Invalid user identity format");
     }
@@ -174,13 +187,14 @@ export const cancelRegistration = mutation({
 
 export const checkInAttendee = mutation({
   args: { 
-    // 1. Unified Argument Blueprint: userId listed first
-    userId: v.string(),
+    // 1. Unified Argument Blueprint: token listed first
+    token: v.string(),
     qrCode: v.string() 
   },
   handler: async (ctx, args) => {
+    const rawUserId = await verifyIdentity(args.token);
     // 2. Safely cast the string ID into a valid Convex Document ID
-    const userId = ctx.db.normalizeId("users", args.userId);
+    const userId = ctx.db.normalizeId("users", rawUserId);
     if (!userId) {
       throw new Error("Invalid user identity format");
     }
@@ -236,13 +250,14 @@ export const checkInAttendee = mutation({
 
 export const getEventRegistrations = query({
   args: { 
-    // 1. Unified Argument Blueprint: userId listed first
-    userId: v.string(),
+    // 1. Unified Argument Blueprint: token listed first
+    token: v.string(),
     eventId: v.id("events") 
   },
   handler: async (ctx, args) => {
+    const rawUserId = await verifyIdentity(args.token);
     // 2. Safely cast the string ID into a valid Convex Document ID
-    const userId = ctx.db.normalizeId("users", args.userId);
+    const userId = ctx.db.normalizeId("users", rawUserId);
     if (!userId) {
       throw new Error("Invalid user identity format");
     }

@@ -52,8 +52,9 @@ export default function UniversalImagePicker({ isOpen, onClose, onSelect }) {
 
         setUploading(true)
         try {
+            const token = localStorage.getItem("convex_token") || "";
             // 1. Get a secure storage upload url token from Convex backend
-            const postUrl = await generateUploadUrl()
+            const postUrl = await generateUploadUrl({ token });
 
             // 2. POST the raw binary file directly to Convex file servers
             const result = await fetch(postUrl, {

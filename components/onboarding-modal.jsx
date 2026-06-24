@@ -63,7 +63,9 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
 
    const handleComplete = async () => {
     try {
+      const token = localStorage.getItem("convex_token") || "";
       await completeOnboarding({
+        token,
         location: {
           city: location.city,
           state: location.state,

@@ -83,25 +83,34 @@ const CreateEvent = () => {
   // const hasPro = has?.({ plan: "pro" });
 
   // const { data: currentUser } = useConvexQuery(api.users.getCurrentUser);
-  const { user : currentUser, isLoading : userLoading, refreshUser } = useAuth();
+  const { user : currentUser, token, isLoading : userLoading, refreshUser } = useAuth();
 
 
   const [animatedPlaceholder, setAnimatedPlaceholder] = useState("");
   // Safely default createFormBlocked to false if data is still loading/undefined
   // Use a ternary or 'skip' to ensure it doesn't try to read currentUser._id before it exists.
-  const  createFormBlocked  = useConvexQuery(
-                api.events.checkLimitForCreateEvent,
-                currentUser?._id ? {userId: currentUser._id} : "skip"
-              ) ?? false; // Safely default to false
+  
+// Add this log:
+console.log("👉 FRONTEND TOKEN SENT:", token ? `${token.substring(0, 20)}...` : "NO TOKEN");
 
+
+    // 1. Fetch data from backend
+  const { data: limitCheckResult, isCheckLoading } = useConvexQuery(
+    api.events.checkLimitForCreateEvent,
+    token ? { token } : "skip"
+  );
+
+  // 2. Simple single variable logic: 
+  // Only block the form if loading is done AND the backend explicitly returns true
+  const createFormBlocked = !isCheckLoading && limitCheckResult === true;
 
   useEffect(() => {
       // If data is still loading or user is not blocked, reset placeholder immediately
     if (!createFormBlocked) {
-      setAnimatedPlaceholder("Название мероприятия")
+      setAnimatedPlaceholder("Event name")
       return
     }
-    const baseText = "У вас уже есть 2 непроверенных или неоплаченных мероприятия. Дальнейшее создание- после оплаты.    .    .   "
+    const baseText = "You already have 2 unverified or unpaid events. Further creation - after payment.    .    .   "
     let index =0;
     // Loops every 120 ms to shift the characters left, creating the text runner ticker 
     const tickerInterval = setInterval(() => {
@@ -188,6 +197,11 @@ const coverImage = watch("coverImage");
     return d;
   }
   const onSubmit = async (data) => {
+     console.log("the token is:", token);
+      if (!token) {
+      toast.error("Your session has expired. Please log in again to create an event.");
+      return;
+     }
     try {
         const start = combineDateTime(data.startDate, data.startTime);
         const end = combineDateTime(data.endDate, data.endTime);
@@ -201,10 +215,8 @@ const coverImage = watch("coverImage");
           return;
         }
 
-    
-
         await createEvent({
-          userId: currentUser._id,
+          token,
           title: data.title,
           description: data.description,
           category: data.category,
@@ -220,10 +232,9 @@ const coverImage = watch("coverImage");
           country: "India",
 
           capacity: data.capacity,
-          ticketType: data.ticketType,
-          ticketPrice: data.ticketPrice || undefined,
+          ticketPrice: data.ticketType === "paid" ? Number(data.ticketPrice) : undefined,
           coverImage: data.coverImage || undefined,
-          themeColor: data.themeColor,
+          themeColor: data.themeColor || "#1e3a8a",
           // hasPro,
         });
 
@@ -231,7 +242,7 @@ const coverImage = watch("coverImage");
         router.push("/my-events");  
     } catch (error) {
       toast.error(error.message ||"Failed to create event");
-    }
+    } 
   }
 
   const handleAIGenerate = (generatedData) => {

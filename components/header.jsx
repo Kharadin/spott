@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Building, Plus, Ticket } from "lucide-react";
 import { BarLoader } from "react-spinners";
 import { useOnboarding } from "@/hooks/use-onboarding";
@@ -14,6 +14,7 @@ import Image from "next/image";
 import PricingModal from "./pricing-modal";
 
 const Header = () => {
+  const router = useRouter();
   const searchParams = useSearchParams();
   // Temporary or global state replacement for auth checking
   const [user, setUser] = useState(null); 
@@ -27,6 +28,9 @@ const Header = () => {
   useEffect(() => {
     // Automatically open the login modal if the URL contains showLogin=true
     if (searchParams.get("showLogin") === "true" && !user) {
+      // #region agent log
+      fetch('http://127.0.0.1:7702/ingest/db15b427-9efe-4370-be8b-f9dc44e66b0e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cb2d6d'},body:JSON.stringify({sessionId:'cb2d6d',location:'header.jsx:30',message:'opening auth modal from showLogin param',data:{showLogin:searchParams.get("showLogin"),redirect:searchParams.get("redirect"),hasUser:!!user,pathname:typeof window!=='undefined'?window.location.pathname:null},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       setShowAuthModal(true);
     }
 
@@ -38,6 +42,9 @@ const Header = () => {
         const data = await res.json();
         if (data.user) {
           setUser(data.user);
+          if (data.token) {
+            localStorage.setItem("convex_token", data.token);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch user:", error);
@@ -56,6 +63,7 @@ const Header = () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       setUser(null);
+      localStorage.removeItem("convex_token");
       window.location.reload();
     } catch (err) {
       console.error("Sign out failed", err);
@@ -119,7 +127,12 @@ const Header = () => {
               </>
             ) : (
               /* CUSTOM UNAUTHENTICATED STATE */
-              <Button size="sm" onClick={() => setShowAuthModal(true)}>
+              <Button size="sm" onClick={() => {
+                // #region agent log
+                fetch('http://127.0.0.1:7702/ingest/db15b427-9efe-4370-be8b-f9dc44e66b0e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cb2d6d'},body:JSON.stringify({sessionId:'cb2d6d',location:'header.jsx:127',message:'opening auth modal from sign in button',data:{source:'signInButton'},timestamp:Date.now(),hypothesisId:'E'})}).catch(()=>{});
+                // #endregion
+                setShowAuthModal(true);
+              }}>
                 Sign In
               </Button>
             )}
@@ -152,7 +165,19 @@ const Header = () => {
       />
       <AuthModal 
         isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
+        onClose={() => {
+          // #region agent log
+          fetch('http://127.0.0.1:7702/ingest/db15b427-9efe-4370-be8b-f9dc44e66b0e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cb2d6d'},body:JSON.stringify({sessionId:'cb2d6d',location:'header.jsx:165',message:'auth modal closed',data:{showLoginInUrl:searchParams.get("showLogin"),redirect:searchParams.get("redirect")},timestamp:Date.now(),hypothesisId:'B',runId:'post-fix'})}).catch(()=>{});
+          // #endregion
+          setShowAuthModal(false);
+          if (searchParams.get("showLogin") === "true") {
+            const nextParams = new URLSearchParams(searchParams.toString());
+            nextParams.delete("showLogin");
+            nextParams.delete("redirect");
+            const qs = nextParams.toString();
+            router.replace(qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
+          }
+        }}
         onAuthSuccess={(userData) => {
           setUser(userData);
           setShowAuthModal(false);

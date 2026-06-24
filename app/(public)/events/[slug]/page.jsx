@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { api } from '@/convex/_generated/api'
 import { useConvexQuery } from '@/hooks/use-convex-query'
 import { getCategoryIcon, getCategoryLabel } from '@/lib/data'
-import { useUser } from '@clerk/nextjs'
+import { useAuth } from '@/app/context/AuthContext'
 import { format } from 'date-fns'
 import { Calendar, CheckCircle, Clock, ExternalLink, Loader2, MapPin, Share2, Ticket, User, Users } from 'lucide-react'
 
@@ -53,7 +53,7 @@ export default function  EventDetailPage()  {
     const params = useParams()
     const router = useRouter()
     
-    const {user} = useUser();
+    const {user, token} = useAuth();
 
     const [showRegisterModal, setShowRegisterModal] = useState(false);
     // Fetch event details
@@ -61,10 +61,33 @@ export default function  EventDetailPage()  {
         slug: params.slug
     })
     // Check if user is already registered
-    const { data: registration } = useConvexQuery(
+   // Determine if we should pause or fire the query
+   const queryArgs = (() => {
+        // If the event ID hasn't loaded yet from the slug, skip safely!
+        if (!event?._id) return "skip";
+
+        // If a token exists, send both parameters
+        if (token) return { eventId: event._id, token };
+
+        // If unauthenticated, send only the eventId
+        return { eventId: event._id };
+    })();
+    // 1. Default to "skip" while the event ID is loading from the slug
+//     let queryArgs = "skip";
+
+//     if (event?._id) {
+//     // 2. Once the event exists, check if we have a user token or not
+//     queryArgs = token 
+//         ? { eventId: event._id, token } 
+//         : { eventId: event._id };
+// }
+
+    const { data: registration, isLoading: isRegistrationLoading } = useConvexQuery(
         api.registrations.checkRegistration,
-        event?._id ? { eventId: event._id } : "skip"
+        queryArgs
     );
+
+
     const handleShare = async () => {
         const url = window.location.href;
         if (navigator.share) {
@@ -107,7 +130,7 @@ export default function  EventDetailPage()  {
 
     const isEventPast = event.endDate < Date.now();
     const isEventFull = event.capacity <= event.registrationCount
-    const isOrganizer = user?.id === event.organizerId;
+    const isOrganizer = user?._id === event.organizerId;
 
     console.log(event.themeColor)
     console.log(darkenColor(event.themeColor, 0.2))

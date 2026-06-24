@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useConvexMutation, useConvexQuery } from "@/hooks/use-convex-query";
 import { api } from "@/convex/_generated/api";
+import { useAuth } from "@/app/context/AuthContext";
 import { Calendar, Loader2, MapPin, Ticket } from "lucide-react";
 import EventCard from "@/components/event-card";
 import { toast } from "sonner";
@@ -18,10 +19,12 @@ import { formatDate } from "date-fns";
 const MyTicketsPage = () => {
     
     const [selectedTicket, setSelectedTicket] = useState(null);
-    const router = useRouter();
+    const { token } = useAuth();
 
     const {data: registrations, isLoading} = useConvexQuery(
-        api.registrations.getMyRegistrations);
+        api.registrations.getMyRegistrations,
+        token ? { token } : "skip"
+    );
 
     const {mutate: cancelRegistration, isLoading: isCancelling}= useConvexMutation(
             api.registrations.cancelRegistration)
@@ -53,7 +56,7 @@ const MyTicketsPage = () => {
             return;
         }
         try {
-            await cancelRegistration({registrationId});
+            await cancelRegistration({ token, registrationId });
             toast.success("Registration cancelled successfully");
            
         } catch (error) {

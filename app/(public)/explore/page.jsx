@@ -22,15 +22,17 @@ import { CATEGORIES } from "@/lib/data";
 import Autoplay from "embla-carousel-autoplay";
 import EventCard from "@/components/event-card"
 import { Card, CardContent } from "@/components/ui/card";
-
+import * as React from "react"
 
 export default function ExplorePage() {
   const router = useRouter();
-  const plugin = useRef(Autoplay({
-     delay: 5000, stopOnInteraction: false,
-     jump: false,
-     stopOnMouseEnter: true, 
+  const plugin = React.useRef(Autoplay({
+    delay: 5000, stopOnInteraction: false,
+    jump: false,
+    stopOnMouseEnter: true,
   }));
+
+
 
   // 1. Fetch user via Next.js API (since Convex ctx.auth is now null)
   const [currentUser, setCurrentUser] = useState(null);
@@ -49,7 +51,7 @@ export default function ExplorePage() {
 
   const [activeLocation, setActiveLocation] = useState({
     city: "",
-    state: "Karnataka", 
+    state: "Karnataka",
   });
 
   // 3. Fetch user data on component mount
@@ -68,10 +70,10 @@ export default function ExplorePage() {
       // Unauthenticated guest path fallback
       const savedCity = localStorage.getItem("guest_city");
       const savedState = localStorage.getItem("guest_state");
-      
+
       if (savedState) {
         setActiveLocation({
-          city: savedCity || "", 
+          city: savedCity || "",
           state: savedState
         });
       } else {
@@ -97,8 +99,8 @@ export default function ExplorePage() {
   );
 
   const recommendedCity = "Gurgaon";
-  const recommendedState= "Haryana";
-  const {data: recomLocationEvents, isLoading: loadingRecomLocation} = useConvexQuery(
+  const recommendedState = "Haryana";
+  const { data: recomLocationEvents, isLoading: loadingRecomLocation } = useConvexQuery(
     api.explore.getEventsByLocation,
     {
       city: recommendedCity || undefined,
@@ -114,7 +116,7 @@ export default function ExplorePage() {
 
   const { data: categoryCounts } = useConvexQuery(
     api.explore.getCategoryCounts
-  ); 
+  );
 
   const categoriesWithCounts = useMemo(() => {
     return CATEGORIES.map((cat) => ({
@@ -124,15 +126,18 @@ export default function ExplorePage() {
   }, [categoryCounts]);
 
   const handleEventClick = (slug) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7702/ingest/db15b427-9efe-4370-be8b-f9dc44e66b0e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cb2d6d'},body:JSON.stringify({sessionId:'cb2d6d',location:'explore/page.jsx:129',message:'handleEventClick navigation',data:{slug,targetPath:`/events/${slug}`},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     router.push(`/events/${slug}`);
   };
 
-  const handleCategoryClick = (categoryId)=> {
+  const handleCategoryClick = (categoryId) => {
     router.push(`explore/${categoryId}`);
   }
 
   const handleViewLocalEvents = (cityParam, stateParam) => {
-      // Use the passed arguments, or fallback directly to your activeLocation state values
+    // Use the passed arguments, or fallback directly to your activeLocation state values
     const city = cityParam || activeLocation.city;
     const state = stateParam || activeLocation.state;
     const slug = createLocationSlug(city, state);
@@ -145,242 +150,244 @@ export default function ExplorePage() {
     router.push(`/explore/${slug}`);
   }
   return (
-     <> 
-     <div className='pb-6 text-center'>
+    <>
+      <div className='pb-6 text-center'>
 
-      <h1 className='text-5xl md:text-6xl font-bold mp-4'> Есть куда пойти</h1>
-      <p className='text-ld mt-2 text-slate-300 max-w-4xl mx-auto'> Развивающие мероприятия повсюду. Посмотрите Рекомендуемые, посмотрите события в своем городе, поищите по категориям или в других городах</p>
-     </div>
+        <h1 className='text-5xl md:text-6xl font-bold mp-4'> Есть куда пойти</h1>
+        <p className='text-ld mt-2 text-slate-300 max-w-4xl mx-auto'> Развивающие мероприятия повсюду. Посмотрите Рекомендуемые, посмотрите события в своем городе, поищите по категориям или в других городах</p>
+      </div>
 
-    {/* Featured Carousel */}
-{!featuredEvents ?  (
-   <div className="h-[400px] flex items-center justify-center">
-     <Loader2 className="animate-spin w-8 h-8 text-purple-500" />
-   </div>
- ) : (
-   <div className='mb-16'>
-       <Carousel
-         plugins={[plugin.current]}
-         opts={{ duration: 380, friction: 0.92, loop: true }}
-         className="w-full relative"
-         onMouseEnter={plugin.current.stop}
-         onMouseLeave={() => plugin.current.play()}      
-         setApi={undefined}  
-       >
-         {/* 1. MASK LAYER: Captures the sliding action cleanly within a rounded frame */}
-         <div className="overflow-hidden rounded-xl w-full"> 
-           
-           {/* 2. FIX: Added ml-0 to cancel the native negative layout shift */}
-           <CarouselContent className="transform-gpu will-change-transform ml-0">
-             {featuredEvents.map((event, index) => (
-              //  {/* 3. FIX: Added pl-0 so the slide canvas occupies exactly 100% width */}
-               <CarouselItem key={event._id} className="pl-0">
-                 <div
-                   className="relative h-[400px] cursor-pointer"
-                   onClick={() => handleEventClick(event.slug)}
-                 >
-                   {event.coverImage ? (
-                     <Image
-                       src={event.coverImage}
-                       alt={event.title}
-                       fill
-                       className="w-full h-full object-cover"
-                       style={{
-                           objectPosition: `${event.picXposition !== undefined ? event.picXposition : 50}%  
-                                             ${event.picYposition !==undefined ? event.picYposition : 50}%`
-                       }}
-                       priority={index === 0}
-                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                     />
-                   ) : (
-                     <div
-                       className="absolute inset-0"
-                       style={{ backgroundColor: event.themeColor }}
-                     />
-                   )}
-                   <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/30" />
-                   <div className="relative h-full flex flex-col justify-end p-8 md:p-12">
-                     <Badge className="w-fit mb-4" variant="secondary">
-                       {event.city}, {event.state || event.country}
-                     </Badge>
-                     <h2 className="text-3xl md:text-5xl font-bold mb-3 text-white">
-                       {event.title}
-                     </h2>
-                     <p className="text-lg text-white/90 mb-4 max-w-2xl line-clamp-2">
-                       {event.description}
-                     </p>
-                     <div className="flex items-center gap-4 text-white/80">
-                       <div className="flex items-center gap-2">
-                         <Calendar className="w-4 h-4" />
-                         <span className="text-sm">
-                           {format(event.startDate, "PPP")}
-                         </span>
-                       </div>
-                       <div className="flex items-center gap-2">
-                         <MapPin className="w-4 h-4" />
-                         <span className="text-sm">{event.city}</span>
-                       </div>
-                       <div className="flex items-center gap-2">
-                         <Users className="w-4 h-4" />
-                         <span className="text-sm">
-                           {event.registrationCount} registered
-                         </span>
-                       </div>
-                     </div>
-                   </div>
-                 </div>
-               </CarouselItem>
-             ))}
-           </CarouselContent>
-         </div> 
-         {/* END OF MASK LAYER */}
-         
-         {/* 4. NAVIGATION: Shifted inside slightly for a symmetrical overlay */}
-         <CarouselPrevious className="left-4" />
-         <CarouselNext className="right-4" />
-       </Carousel>
-   </div>
-)}
+      {/* Featured Carousel */}
+      {!featuredEvents ? (
+        <div className="h-[400px] flex items-center justify-center">
+          <Loader2 className="animate-spin w-8 h-8 text-purple-500" />
+        </div>
+      ) : (
+        <div className='mb-16'>
+          <Carousel
+            // FIX: Safely pass the plugin array or pass an empty array on first render
+            plugins={plugin.current ? [plugin.current] : []}
+            opts={{ duration: 380, friction: 0.92, loop: true }}
+            className="w-full relative"
+            // FIX: Add safety checks here so it doesn't crash if the ref isn't ready
+            // onMouseEnter={() => plugin.current?.stop()}
+            // onMouseLeave={() => plugin.current?.play()}
+            setApi={undefined}
+          >
+            {/* 1. MASK LAYER: Captures the sliding action cleanly within a rounded frame */}
+            <div className="overflow-hidden rounded-xl w-full">
+
+              {/* 2. FIX: Added ml-0 to cancel the native negative layout shift */}
+              <CarouselContent className="transform-gpu will-change-transform ml-0">
+                {featuredEvents.map((event, index) => (
+                  //  {/* 3. FIX: Added pl-0 so the slide canvas occupies exactly 100% width */}
+                  <CarouselItem key={event._id} className="pl-0">
+                    <div
+                      className="relative h-[400px] cursor-pointer"
+                      onClick={() => handleEventClick(event.slug)}
+                    >
+                      {event.coverImage ? (
+                        <Image
+                          src={event.coverImage}
+                          alt={event.title}
+                          fill
+                          className="w-full h-full object-cover"
+                          style={{
+                            objectPosition: `${event.picXposition !== undefined ? event.picXposition : 50}%  
+                                             ${event.picYposition !== undefined ? event.picYposition : 50}%`
+                          }}
+                          priority={index === 0}
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        />
+                      ) : (
+                        <div
+                          className="absolute inset-0"
+                          style={{ backgroundColor: event.themeColor }}
+                        />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/30" />
+                      <div className="relative h-full flex flex-col justify-end p-8 md:p-12">
+                        <Badge className="w-fit mb-4" variant="secondary">
+                          {event.city}, {event.state || event.country}
+                        </Badge>
+                        <h2 className="text-3xl md:text-5xl font-bold mb-3 text-white">
+                          {event.title}
+                        </h2>
+                        <p className="text-lg text-white/90 mb-4 max-w-2xl line-clamp-2">
+                          {event.description}
+                        </p>
+                        <div className="flex items-center gap-4 text-white/80">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
+                            <span className="text-sm">
+                              {format(event.startDate, "PPP")}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4" />
+                            <span className="text-sm">{event.city}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Users className="w-4 h-4" />
+                            <span className="text-sm">
+                              {event.registrationCount} registered
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </div>
+            {/* END OF MASK LAYER */}
+
+            {/* 4. NAVIGATION: Shifted inside slightly for a symmetrical overlay */}
+            <CarouselPrevious className="left-4" />
+            <CarouselNext className="right-4" />
+          </Carousel>
+        </div>
+      )}
 
 
-     {/* Local Events */}
+      {/* Local Events */}
       {!localEvents ? (
         <div className="h-40 flex items-center justify-center">Finding local events ... </div>
       ) : (
         <div className='mb-16 '>
-          <div className="mb-4"> 
+          <div className="mb-4">
             <h2 className="text-3xl font-bold mb-1">
               Events by location:
             </h2>
-          
+
             {/* Narrow screen row-collapse container fixes */}
             <div className="flex flex-col min-[460px]:flex-row min-[460px]:items-center min-[460px]:justify-between gap-4">
-                <p className="text-muted-foreground whitespace-normal">
-                {`Nearest in :  `} 
-                  <span className="font-semibold text-slate-200 block sm:inline">
-                    {activeLocation.city ? `${activeLocation.city}, ` : ""}{activeLocation.state}
-                  </span>
-                </p>  
+              <p className="text-muted-foreground whitespace-normal">
+                {`Nearest in :  `}
+                <span className="font-semibold text-slate-200 block sm:inline">
+                  {activeLocation.city ? `${activeLocation.city}, ` : ""}{activeLocation.state}
+                </span>
+              </p>
 
-                <div className='flex flex-wrap sm:justify-end gap-2'>
-                  {/* Hide or disable View Town if no city is currently selected */}
-                  {activeLocation.city && (
-                    <Button
-                      variant="outline"
-                      className="gap-2 bg-slate-500 text-white dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-colors"
-                      onClick={()=> handleViewLocalEvents()} 
-                    >
-                      View Town<ArrowRight className="w-4 h-4" />
-                    </Button>
-                  )} 
-                    
-                  <Button 
-                      onClick={()=> handleViewStateEvents()} 
-                      variant="outline"
-                      className="gap-2 bg-slate-500 text-white dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-colors"
+              <div className='flex flex-wrap sm:justify-end gap-2'>
+                {/* Hide or disable View Town if no city is currently selected */}
+                {activeLocation.city && (
+                  <Button
+                    variant="outline"
+                    className="gap-2 bg-slate-500 text-white dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-colors"
+                    onClick={() => handleViewLocalEvents()}
                   >
-                      <span>All State</span>
-                      <ArrowRight className="w-4 h-4" />
+                    View Town<ArrowRight className="w-4 h-4" />
                   </Button>
-                </div>
+                )}
+
+                <Button
+                  onClick={() => handleViewStateEvents()}
+                  variant="outline"
+                  className="gap-2 bg-slate-500 text-white dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-colors"
+                >
+                  <span>All State</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
 
             <p className="mt-2 text-md text-slate-400">Select your state and town in the panel on top</p>
-          </div>  
-            
-            {/* Display "No Events" if there are no local events */}
-            {!localEvents.length ?  (
-              <div className="h-4 flex items-center justify-center text-2xl">No events found</div>
-            ) : 
-            <div className= "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {localEvents.map((event)=>(
-                <EventCard 
-                key={event._id} 
-                event={event}
-                variant="grid"
-                onClick={() => handleEventClick(event.slug)} 
+          </div>
+
+          {/* Display "No Events" if there are no local events */}
+          {!localEvents.length ? (
+            <div className="h-4 flex items-center justify-center text-2xl">No events found</div>
+          ) :
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {localEvents.map((event) => (
+                <EventCard
+                  key={event._id}
+                  event={event}
+                  variant="grid"
+                  onClick={() => handleEventClick(event.slug)}
                 />
               ))}
             </div>
-            }
-        </div>  
-        
-        )}
-      
+          }
+        </div>
+
+      )}
+
       {/* Recommeded Location Events */}
-       {!recomLocationEvents ? (
+      {!recomLocationEvents ? (
         <div className="h-40 flex items-center justify-center">Finding Recommended location events ... </div>
       ) : (
         <div className='mb-16 '>
-          <div className="mb-4"> 
+          <div className="mb-4">
             <h2 className="text-3xl font-bold mb-1">
               Events in recommended location:
             </h2>
-          
+
             {/* Narrow screen row-collapse container fixes */}
             <div className="flex flex-col min-[460px]:flex-row min-[460px]:items-center min-[460px]:justify-between gap-4">
-                <p className="text-muted-foreground whitespace-normal">
-                {`Nearest in :  `} 
-                  <span className="font-semibold text-slate-200 block sm:inline">
-                    {recommendedCity ? `${recommendedCity}, ` : ""}{recommendedState}
-                  </span>
-                </p>
-                <div className='flex flex-wrap sm:justify-end gap-2'>
-                  {/* Hide or disable View Town if no recommeded city  */}
-                  {recommendedCity && (
-                    <Button
-                      variant="outline"
-                      className="gap-2 bg-slate-500 text-white dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-colors"
-                      onClick={() => handleViewLocalEvents(recommendedCity, recommendedState)} 
-                    >
-                      All in Town<ArrowRight className="w-4 h-4" />
-                    </Button>
-                  )} 
-                    
-                  <Button 
-                      onClick={()=> handleViewStateEvents(recommendedState)} 
-                      variant="outline"
-                      className="gap-2 bg-slate-500 text-white dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-colors"
+              <p className="text-muted-foreground whitespace-normal">
+                {`Nearest in :  `}
+                <span className="font-semibold text-slate-200 block sm:inline">
+                  {recommendedCity ? `${recommendedCity}, ` : ""}{recommendedState}
+                </span>
+              </p>
+              <div className='flex flex-wrap sm:justify-end gap-2'>
+                {/* Hide or disable View Town if no recommeded city  */}
+                {recommendedCity && (
+                  <Button
+                    variant="outline"
+                    className="gap-2 bg-slate-500 text-white dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-colors"
+                    onClick={() => handleViewLocalEvents(recommendedCity, recommendedState)}
                   >
-                      <span>All State</span>
-                      <ArrowRight className="w-4 h-4" />
+                    All in Town<ArrowRight className="w-4 h-4" />
                   </Button>
-                </div>
+                )}
+
+                <Button
+                  onClick={() => handleViewStateEvents(recommendedState)}
+                  variant="outline"
+                  className="gap-2 bg-slate-500 text-white dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-colors"
+                >
+                  <span>All State</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
             {/* <p className="mt-2 text-md text-slate-400">Select your state and town in the panel on top</p> */}
-          </div> 
-           {/* Display "No Events" if there are no local events */}
-            {!recomLocationEvents.length ?  (
-              <div className="h-4 flex items-center justify-center text-2xl">No recommended location events found</div>
-            ) : 
-            <div className= "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {recomLocationEvents.map((event)=>(
-                <EventCard 
-                key={event._id} 
-                event={event}
-                variant="grid"
-                onClick={() => handleEventClick(event.slug)} 
+          </div>
+          {/* Display "No Events" if there are no local events */}
+          {!recomLocationEvents.length ? (
+            <div className="h-4 flex items-center justify-center text-2xl">No recommended location events found</div>
+          ) :
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {recomLocationEvents.map((event) => (
+                <EventCard
+                  key={event._id}
+                  event={event}
+                  variant="grid"
+                  onClick={() => handleEventClick(event.slug)}
                 />
               ))}
             </div>
-            }
+          }
 
 
         </div>
-         )}
+      )}
 
 
-      
+
       {/* Browse by category */}
       <div className="mb-16">
         <h2 className="text-3xl font-bold mb-6">Смотреть по категориям</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {categoriesWithCounts.map((category)=> (
+          {categoriesWithCounts.map((category) => (
             <Card
-            key={category.id}
-            className="py-2 group cursor-pointer hover:shadow-lg transition-all hover:border-purple-500/50
-            flex flex-row items-center " 
-            onClick={() => handleCategoryClick(category.id)}
+              key={category.id}
+              className="py-2 group cursor-pointer hover:shadow-lg transition-all hover:border-purple-500/50
+            flex flex-row items-center "
+              onClick={() => handleCategoryClick(category.id)}
             >
               <CardContent className="p-3 sm:p-6 flex items-center gap-2 w-full">
                 <div className="text-3xl sm:text-4xl">{category.icon} </div>
@@ -390,7 +397,7 @@ export default function ExplorePage() {
                     {category.label}
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    {category.count} Event{category.count !==1 ? "s" : "" }
+                    {category.count} Event{category.count !== 1 ? "s" : ""}
 
                   </p>
                 </div>
@@ -401,35 +408,35 @@ export default function ExplorePage() {
       </div>
 
       {/* Popular events across Rus */}
-      {!popularEvents ?  (  
+      {!popularEvents ? (
         <div className="h-40 flex items-center justify-center">Finding popular events ... </div>
 
-        ):
+      ) :
         (
-        <div className="mb-16"> 
-          <div className="mb-6">
-            <h2 className='text-3xl font-bold mb-1'>Популярные события</h2>
-            <p className="text-muted-foreground">по всему черноморскому побережью: Сочи, Туапсе, Адлер, Лазаревское, Геленджик...</p>
-          </div>
+          <div className="mb-16">
+            <div className="mb-6">
+              <h2 className='text-3xl font-bold mb-1'>Популярные события</h2>
+              <p className="text-muted-foreground">по всему черноморскому побережью: Сочи, Туапсе, Адлер, Лазаревское, Геленджик...</p>
+            </div>
 
-          <div className="grid grid-cols1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {popularEvents.map((event) => (
-              <EventCard
-                key={event._id}
-                event={event}
-                variant="list"
-                onClick={()=> handleEventClick(event.slug)}
-              />
-            ))}
+            <div className="grid grid-cols1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {popularEvents.map((event) => (
+                <EventCard
+                  key={event._id}
+                  event={event}
+                  variant="list"
+                  onClick={() => handleEventClick(event.slug)}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Empty Slate */}
       {!loadingFeatured &&
         !loadingLocal &&
-        !loadingPopular && 
-        (!featuredEvents || featuredEvents.length === 0 )&& 
+        !loadingPopular &&
+        (!featuredEvents || featuredEvents.length === 0) &&
         (!localEvents || localEvents.length === 0) &&
         (!popularEvents || popularEvents.length === 0) && (
 
@@ -451,6 +458,6 @@ export default function ExplorePage() {
       }
 
     </>
-   
+
   )
 }

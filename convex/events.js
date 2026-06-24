@@ -3,6 +3,7 @@ import {api} from "./_generated/api";
 import { mutation, query, action } from "./_generated/server";
 import {  v } from "convex/values";
 import {txUpdateCounter} from "./admin";
+import { verifyIdentity } from "./auth.helpers";
 
 
 // Helper function to safely increment and decrement category counts
@@ -45,38 +46,35 @@ async function  checkUnreviewedOrUnpublished  (ctx, userId) {
 // 2. STANDALONE QUERY (FOR FRONTEND UI)
 // ==========================================
 
-
 export const checkLimitForCreateEvent = query({
-  // 1. Explicitly require the user ID as a string from the client
-  args: { userId: v.string() }, 
+  args: { token: v.optional(v.string()) }, 
   handler: async (ctx, args) => {
-    try {
-      // 2. Safely cast the string ID into a valid Convex Document ID
-      const userId = ctx.db.normalizeId("users", args.userId);
-      if (!userId) {
-        throw new Error("Invalid user ID format");
-      }   
+    // If the token hasn't loaded yet, do not block the form yet
+    if (!args.token) return false;
 
-      // 3. Direct DB lookup using the casted internal ID
+    try {
+      const rawUserId = await verifyIdentity(args.token);
+      const userId = ctx.db.normalizeId("users", rawUserId);
+      if (!userId) return false;
+
       const user = await ctx.db.get(userId);
-      if (!user) {
-        throw new Error("User profile not found");
-      }
+      if (!user) return false;
       
-      // 4. Execute your internal helper function passing down the internal ID
-      // NOTE: double-check if your helper function is spelled 'checkUnreviewedOrUnpublished' (with an 'h')
+      // Return the real limit calculation result (true or false)
       return await checkUnreviewedOrUnpublished(ctx, user._id);
       
     } catch (error) {
-      // Safely extract the message string to keep Convex errors clean
-      throw new Error(error instanceof Error ? error.message : String(error));
+      console.error("Auth error in checkLimitForCreateEvent:", error.message);
+      return false; // Fallback safely to open if token check fails mid-request
     }
   }
 });
 
+
+
 export const createEvent = mutation({
   args: {
-    userId: v.string(), // Extracted first from your frontend context
+    token: v.string(), // Extracted first from your frontend context
     title: v.string(),
     description: v.string(),
     category: v.string(),
@@ -97,8 +95,10 @@ export const createEvent = mutation({
     themeColor: v.optional(v.string()),
   }, 
   handler: async (ctx, args) => {
-    // 1. Destructure 'userId' out, leaving all pure event fields inside 'eventDetails'
-    const { userId: rawUserId, ...eventDetails } = args;
+    // 1. Destructure 'token' out, leaving all pure event fields inside 'eventDetails'
+    const { token, ...eventDetails } = args;
+
+    const rawUserId = await verifyIdentity(token);
 
     // 2. Safely cast the string ID into a valid Convex Document ID
     const userId = ctx.db.normalizeId("users", rawUserId);
@@ -169,31 +169,47 @@ export const getEventBySlug = query ({
 })
 
 // Get Events by organizer
-export const getMyEvents = query ({
-    args: {userId: v.string()},
-    handler: async (ctx, args) => {
-          // 2. Safely cast the string ID into a valid Convex Document ID
-      const userId = ctx.db.normalizeId("users", args.userId);
+export const getMyEvents = query({
+  // Accept an optional or empty token string to prevent validation crashes
+  args: { token: v.optional(v.string()) }, 
+  handler: async (ctx, args) => {
+    // 1. If token isn't provided yet, return empty list instead of crashing
+    if (!args.token) {
+      return []; 
+    }
+
+    try {
+      const rawUserId = await verifyIdentity(args.token);
+      
+      // 2. Safely cast the string ID into a valid Convex Document ID
+      const userId = ctx.db.normalizeId("users", rawUserId);
       if (!userId) {
-        throw new Error("Invalid user ID format");
+        return []; // Return empty if user doesn't exist in DB
       }   
-       // 2. Optimized: Skip fetching the profile entirely! 
-    // Use the normalized 'userId' variable directly in the query loop.
-        const events = await ctx.db
+
+      // 3. Fetch events
+      const events = await ctx.db
         .query("events")
-        .withIndex("by_organizer", (q)=> q.eq("organizerId", userId)) // And this way on,  change the functions also
+        .withIndex("by_organizer", (q) => q.eq("organizerId", userId))
         .order("desc")
         .collect();
-        return events
+
+      return events;
+    } catch (error) {
+      // Catch JWT expiration or invalid errors gracefully
+      console.error("Auth error in getMyEvents:", error.message);
+      return []; 
     }
-})
+  }
+});
 // Delete event
 export const deleteEvent = mutation ({
-    args: {userId: v.string(),
+    args: {token: v.string(),
         eventId: v.id("events")},
     handler: async (ctx, args) =>  {
+      const rawUserId = await verifyIdentity(args.token);
            // 2. Safely cast the string ID into a valid Convex Document ID
-      const userId = ctx.db.normalizeId("users", args.userId);
+      const userId = ctx.db.normalizeId("users", rawUserId);
       if (!userId) {
         throw new Error("Invalid user ID format");
       }   

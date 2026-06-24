@@ -33,14 +33,14 @@ export default function AdminDashboardPage() {
   const targetTimestamp = new Date(dateString).getTime();
 
   // 🔑 Pull the current user profile from your custom Auth Context
-  const {user, isLoading } = useAuth();
+  const {user, token, isLoading } = useAuth();
 
   // Call our index-optimized query
   // FIX: Evaluate the entire argument block. If user._id doesn't exist yet, skip the whole query execution.
   const pageData = useQuery(api.admin.getAdminEventsPage, 
-    user?._id 
+    token 
     ?  {
-      userId: user._id,
+      token,
       skipCount: currentPage * ITEMS_PER_PAGE,
       limit: ITEMS_PER_PAGE,
       showPast,
@@ -158,7 +158,7 @@ export default function AdminDashboardPage() {
                 <Button
                   size="xs"
                   className={`text-[11px] px-1 text-white   ${!event.reviewed ? "bg-rose-500 hover:bg-rose-700" : "bg-sky-600 hover:bg-sky-800"}`}
-                  onClick={() => toggleReview({ userId: user._id, id: event._id, review:   !event.reviewed })}
+                  onClick={() => toggleReview({ token, id: event._id, review:   !event.reviewed })}
                 >
                   {event.reviewed ? "Un-Review" : "Review"}
                 </Button>
@@ -166,7 +166,7 @@ export default function AdminDashboardPage() {
                 <Button
                   size="xs"
                   className={`text-[11px] px-1 text-white ${!event.published ? "bg-amber-600 hover:bg-amber-700" : "bg-emerald-600 hover:bg-emerald-700"}`}
-                  onClick={() => togglePublish({ userId: user._id, id: event._id, publish: !event.published })}
+                  onClick={() => togglePublish({ token, id: event._id, publish: !event.published })}
                 >
                   {event.published ? "Unpublish" : "Publish"}
                 </Button>
@@ -175,7 +175,7 @@ export default function AdminDashboardPage() {
                   size="xs"
                   className="text-[11px]  px-1"
                   variant={!event.cancelled ? "default" : "destructive"}
-                  onClick={() => toggleCancel({ userId: user._id, id: event._id, cancel: !event.cancelled })}
+                  onClick={() => toggleCancel({ token, id: event._id, cancel: !event.cancelled })}
                 >
                   {event.cancelled ? "Re-Activate" : "Cancel"}
                 </Button>

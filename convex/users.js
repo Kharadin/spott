@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
+import { verifyIdentity } from "./auth.helpers";
 
 export const store = mutation({
     args: {},
@@ -93,7 +94,7 @@ export const getById = query({
 
 export const completeOnboarding = mutation ({
       args: {
-        id: v.string(),
+        token: v.string(),
         location: v.object ({
            // Allows string, null, or completely omitted (undefined)
           city: v.optional(v.union(v.string(), v.null())),
@@ -103,7 +104,8 @@ export const completeOnboarding = mutation ({
         interests: v.array(v.string()), // Min 3 categories
       }, 
       handler: async (ctx, args)=> {
-         const userId = ctx.db.normalizeId("users", args.id);
+         const rawUserId = await verifyIdentity(args.token);
+         const userId = ctx.db.normalizeId("users", rawUserId);
          if (!userId) throw new Error("?Must be logged to complete onboarding?");
 
 

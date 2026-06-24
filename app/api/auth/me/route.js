@@ -28,7 +28,7 @@ export async function GET(request) {
     // Strip password hashes out so they never touch client-side browsers
     const { passwordHash, ...safeUserData } = dbUser;
 
-    return NextResponse.json({ user: safeUserData }, { status: 200 });
+    return NextResponse.json({ user: safeUserData, token }, { status: 200 });
   } catch (error) {
     console.error("Error fetching user in /api/auth/me:", error);
     

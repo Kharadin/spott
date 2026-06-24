@@ -10,3 +10,9 @@
     "editor.parameterHints.enabled": false,
     "editor.parameterHints.cycle": false
 }
+
+"files.watcherExclude": {
+  "**/.next/**": true,
+  "**/node_modules/**": true,
+  "**/convex/_generated/**": true
+}

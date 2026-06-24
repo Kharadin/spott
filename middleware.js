@@ -13,6 +13,7 @@ export async function middleware(request) {
   const publicRoutes = [
     "/",
     "/explore",
+    "/events",
     "/api/auth/login",
     "/api/auth/register",
     "/api/auth/logout"
@@ -21,6 +22,10 @@ export async function middleware(request) {
   const isPublic = publicRoutes.some((route) => 
     path === route || path.startsWith(`${route}/`)
   );
+
+  // #region agent log
+  fetch('http://127.0.0.1:7702/ingest/db15b427-9efe-4370-be8b-f9dc44e66b0e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cb2d6d'},body:JSON.stringify({sessionId:'cb2d6d',location:'middleware.js:25',message:'middleware route check',data:{path,isPublic,hasToken:!!cookies.get("session_token")?.value},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
 
   if (isPublic) {
     return NextResponse.next();
@@ -34,6 +39,9 @@ export async function middleware(request) {
     const loginUrl = new URL("/", request.url);
     loginUrl.searchParams.set("showLogin", "true");
     loginUrl.searchParams.set("redirect", path); // Keep track of where they wanted to go
+    // #region agent log
+    fetch('http://127.0.0.1:7702/ingest/db15b427-9efe-4370-be8b-f9dc44e66b0e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cb2d6d'},body:JSON.stringify({sessionId:'cb2d6d',location:'middleware.js:37',message:'middleware redirect to showLogin',data:{fromPath:path,redirectTo:loginUrl.toString()},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     return NextResponse.redirect(loginUrl);
   }
 

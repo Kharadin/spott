@@ -24,7 +24,8 @@ export default function QRScannerModal({ isOpen, onClose }) {
 
   const handleCheckIn = async (qrCode) => {
     try {
-      const result = await checkInAttendee({ qrCode });
+      const token = localStorage.getItem("convex_token") || "";
+      const result = await checkInAttendee({ token, qrCode });
 
       if (result.success) {
         toast.success("✅ Check-in successful!");

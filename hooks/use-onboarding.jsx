@@ -7,7 +7,8 @@ import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/app/context/AuthContext";
 
 // Pages that require onboarding (attendee-centered)
-const ATTENDEE_PAGES = ["/explore", "/events", "/my-tickets", "/profile"];
+// const ATTENDEE_PAGES = ["/explore", "/events", "/my-tickets", "/profile"];
+const ATTENDEE_PAGES = []; // SWITCH IT OFF OR NOW
 
 export function useOnboarding() {
   const [showOnboarding, setShowOnboarding] = useState(false);

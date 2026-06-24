@@ -14,14 +14,14 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   // If no redirect is present (e.g. user clicked login manually), default to /explore
   const redirectTo = searchParams.get("redirect") || "/explore";
 
-  if (!isOpen) return null;
-
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,6 +46,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
         return;
       }
 
+      if (data.token) {
+        localStorage.setItem("convex_token", data.token);
+      }
+      
       // Success! Pass user metadata up to the header state layer
       onAuthSuccess(data.user);
             // 2. Redirect the user to their intended destination

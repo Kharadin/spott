@@ -1,13 +1,19 @@
-import { useQuery, useMutation } from "convex/react";
+import { useQuery , useMutation} from "convex/react";
 import { useState, useEffect } from "react";
-import { toast } from "sonner";
+import { toast } from "sonner"; 
+
 
 export const useConvexQuery = (query, ...args) => {
-  const result = useQuery(query, ...args);
+  // 1. Unpack rest parameters. If no args or first arg is undefined, flag it to skip.
+  const firstArg = args[0];
+  const shouldSkip = firstArg === undefined || firstArg === "skip";
+
+  // 2. Pass "skip" directly to standard useQuery if we should skip, otherwise pass the args
+  const result = useQuery(query, shouldSkip ? "skip" : firstArg);
+  
   const [data, setData] = useState(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-
   // Use effect to handle the state changes based on the query result
   useEffect(() => {
     if (result === undefined) {
@@ -31,6 +37,27 @@ export const useConvexQuery = (query, ...args) => {
     error,
   };
 };
+
+// no-useEffect version, try it later 
+// export const useConvexQuery = (query, ...args) => {
+//   const firstArg = args[0];
+//   const shouldSkip = firstArg === undefined || firstArg === "skip";
+
+//   // Assuming useQuery returns the data directly or undefined while loading
+//   const result = useQuery(query, shouldSkip ? "skip" : firstArg);
+
+//   // Derive states instantly during the render phase
+//   const isLoading = result === undefined;
+//   const data = result;
+//   const error = null; // Note: Standard useQuery hooks usually expose an error object directly if needed
+
+//   return {
+//     data,
+//     isLoading,
+//     error,
+//   };
+// };
+
 
 export const useConvexMutation = (mutation) => {
   const mutationFn = useMutation(mutation);

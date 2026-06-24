@@ -14,7 +14,8 @@ export function AttendeeCard({ registration }) {
 
   const handleManualCheckIn = async () => {
     try {
-      const result = await checkInAttendee({ qrCode: registration.qrCode });
+      const token = localStorage.getItem("convex_token") || "";
+      const result = await checkInAttendee({ token, qrCode: registration.qrCode });
       if (result.success) {
         toast.success("Attendee checked in successfully");
       } else {

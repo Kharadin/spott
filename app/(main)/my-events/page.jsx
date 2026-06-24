@@ -2,6 +2,7 @@
 
 import { useConvexMutation, useConvexQuery } from '@/hooks/use-convex-query';
 import { api } from '@/convex/_generated/api';
+import { useAuth } from '@/app/context/AuthContext';
 
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner';
@@ -16,8 +17,15 @@ import { useState } from 'react';
 const MyEvents = () => {
     const router = useRouter();
 
+    const { token } = useAuth();
+
+      // If token is missing, passing undefined stops Convex from executing the query
+    const queryArgs = token ? { token } : undefined;
     // @ts-ignore
-    const {data: events, isLoading} =useConvexQuery(api.events.getMyEvents);
+     const { data: events, isLoading } = useConvexQuery(
+      api.events.getMyEvents, 
+      queryArgs
+     );
     const {mutate: deleteEvent} = useConvexMutation(api.events.deleteEvent);
     
     const handleDelete = async (eventId) => {
@@ -26,7 +34,7 @@ const MyEvents = () => {
             return;
         }
         try {
-            await deleteEvent({eventId});
+            await deleteEvent({token, eventId});
             toast.success("Event deleted successfully");
            
         } catch (error) {

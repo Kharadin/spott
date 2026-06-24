@@ -1,10 +1,12 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { verifyIdentity } from "./auth.helpers";
 
 // Step A: Generates a short-lived secure upload landing destination URL
 export const generateUploadUrl = mutation({
-  args: {},
-  handler: async (ctx) => {
+  args: { token: v.string() },
+  handler: async (ctx, args) => {
+    await verifyIdentity(args.token);
     return await ctx.storage.generateUploadUrl();
   },
 });
