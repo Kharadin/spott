@@ -51,6 +51,8 @@ export const togglePublishEvent = mutation({
     if (!event.cancelled) {
       const changeAmount = args.publish ? 1 : -1;
       await txUpdateCounter(ctx, event.category, changeAmount);
+      console.log(`Category ${event.category} count updated by ${changeAmount}`);
+      console.log(`New count: ${(await ctx.db.query("categoryCounts").withIndex("by_category", (q) => q.eq("category", event.category)).unique()).count}`);
     }
   },
 });

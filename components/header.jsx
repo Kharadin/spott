@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Building, Plus, Ticket } from "lucide-react";
@@ -12,65 +12,76 @@ import AuthModal from "./auth-modal"; // Your new custom login/signup modal
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import PricingModal from "./pricing-modal";
+import { useAuth } from "@/app/context/AuthContext";
 
 const Header = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // Temporary or global state replacement for auth checking
-  const [user, setUser] = useState(null); 
-  const [isLoading, setIsLoading] = useState(false);
+  // Use shared auth context instead of local state
+  const { user, token, isLoading: authLoading, refreshUser } = useAuth();
+  // Keep local isLoading for explicit actions (sign out)
+  const [actionLoading, setActionLoading] = useState(false);
+  const isLoading = authLoading || actionLoading;
 
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+  const buttonRef = useRef(null);
+
 
   const { showOnboarding, handleOnboardingComplete, handleOnboardingSkip } = useOnboarding();
 
   useEffect(() => {
     // Automatically open the login modal if the URL contains showLogin=true
-    if (searchParams.get("showLogin") === "true" && !user) {
+    if (searchParams.get("showLogin") === "true" && !user && !authLoading) {
       // #region agent log
       fetch('http://127.0.0.1:7702/ingest/db15b427-9efe-4370-be8b-f9dc44e66b0e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cb2d6d'},body:JSON.stringify({sessionId:'cb2d6d',location:'header.jsx:30',message:'opening auth modal from showLogin param',data:{showLogin:searchParams.get("showLogin"),redirect:searchParams.get("redirect"),hasUser:!!user,pathname:typeof window!=='undefined'?window.location.pathname:null},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
       // #endregion
       setShowAuthModal(true);
     }
-
-    // Fetch user data on component mount
-    const fetchUser = async () => {
-      setIsLoading(true);
-      try {
-        const res = await fetch("/api/auth/me");
-        const data = await res.json();
-        if (data.user) {
-          setUser(data.user);
-          if (data.token) {
-            localStorage.setItem("convex_token", data.token);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch user:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (!user) {
-      fetchUser();
-    }
-  }, [searchParams, user]);
+  }, [searchParams, user, authLoading]);
 
   const handleSignOut = async () => {
-    setIsLoading(true);
+    setActionLoading(true);
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-      setUser(null);
       localStorage.removeItem("convex_token");
       window.location.reload();
     } catch (err) {
       console.error("Sign out failed", err);
-    } finally {
-      setIsLoading(false);
+      setActionLoading(false);
     }
   };
+
+  // Click outside to close the user menu
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target)
+      ) {
+        setMenuOpen(false);
+      }
+    };
+
+    if (menuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [menuOpen]);
+
+  const toggleMenu = useCallback(() => {
+    setMenuOpen((prev) => !prev);
+  }, []);
+
 
   return (
     <>
@@ -106,24 +117,28 @@ const Header = () => {
                 </Button>
 
                 {/* Simplified replacement for Clerk's UserButton dropdown styling */}
-                <div className="relative group">
-                  <Button variant="outline" size="sm" className="rounded-full w-8 h-8 p-0 overflow-hidden">
+                <div className="relative" ref={menuRef}>
+                  <Button ref={buttonRef} variant="outline" size="sm" className="rounded-full w-8 h-8 p-0 overflow-hidden" onClick={toggleMenu} aria-expanded={menuOpen} aria-haspopup="true">
                     <Image src={user.imageUrl || "/avatar-fallback.png"} alt="User profile" width={32} height={32} />
                   </Button>
                   {/* Dropdown Menu on Hover/Click */}
-                  <div className="absolute right-0 mt-2 w-48 bg-white border rounded-md shadow-lg py-1 hidden group-hover:block text-black text-sm z-50">
-                    <Link href="/my-tickets" className="flex items-center gap-2 px-4 py-2 hover:bg-zinc-100">
-                      <Ticket size={16} /> My Tickets
-                    </Link>
-                    <Link href="/my-events" className="flex items-center gap-2 px-4 py-2 hover:bg-zinc-100">
-                      <Building size={16} /> My Events
-                    </Link>
-                    <hr className="my-1" />
-                    <button onClick={handleSignOut} className="w-full text-left px-4 py-2 text-red-600 hover:bg-zinc-100">
-                      Sign Out
-                    </button>
-                  </div>
+                  {menuOpen && 
+                   (
+                   <div className="absolute right-0 mt-2 w-48 bg-white border rounded-md shadow-lg py-1 text-black text-sm z-50">
+                      <Link href="/my-tickets" className="flex items-center gap-2 px-4 py-2 hover:bg-zinc-100" onClick={() => setMenuOpen(false)}>
+                        <Ticket size={16} /> My Tickets
+                      </Link>
+                      <Link href="/my-events" className="flex items-center gap-2 px-4 py-2 hover:bg-zinc-100" onClick={() => setMenuOpen(false)}>
+                        <Building size={16} /> My Events
+                      </Link>
+                      <hr className="my-1" />
+                      <button onClick={() => { setMenuOpen(false); handleSignOut(); }} className="w-full text-left px-4 py-2 text-red-600 hover:bg-zinc-100">
+                        Sign Out
+                      </button>
+                    </div>
+                   )}
                 </div>
+                
               </>
             ) : (
               /* CUSTOM UNAUTHENTICATED STATE */
@@ -178,8 +193,8 @@ const Header = () => {
             router.replace(qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
           }
         }}
-        onAuthSuccess={(userData) => {
-          setUser(userData);
+        onAuthSuccess={() => {
+          refreshUser();
           setShowAuthModal(false);
         }}
       />

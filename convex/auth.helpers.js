@@ -1,22 +1,4 @@
-import { internal } from "./_generated/api";
 import { jwtVerify } from "jose";
-import { decodeJwt } from "jose";
-
-// export async function verifyIdentity(token) {
-//   if (!token) {
-//     throw new Error("Unauthorized: Token missing");
-//   }
-
-//   const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-//   try {
-//     const { payload } = await jwtVerify(token, secret);
-//     return payload.userId;
-//   } catch (error) {
-//     throw new Error("Unauthorized: Invalid or expired token");
-//   }
-// }
-
-// experimenntal:
 
 export async function verifyIdentity(token) {
   if (!token) {
@@ -24,20 +6,11 @@ export async function verifyIdentity(token) {
   }
 
   const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+
   try {
     const { payload } = await jwtVerify(token, secret);
     return payload.userId;
   } catch (error) {
-    // DEBUG LOG: See exactly why jose is rejecting it
-    console.log("👉 JWT Verification failed details:", error.message);
-    
-    // If it's just an expiration issue, you can temporarily read the payload anyway to verify it works:
-    const fallbackPayload = decodeJwt(token);
-    if (fallbackPayload && fallbackPayload.userId) {
-      console.log("⚠️ Using expired token for user:", fallbackPayload.userId);
-      return fallbackPayload.userId; 
-    }
-    
     throw new Error("Unauthorized: Invalid or expired token");
   }
 }

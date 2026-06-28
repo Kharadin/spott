@@ -1,8 +1,7 @@
 // app/(admin)/admin/layout.js
 "use client";
 
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "@/app/context/AuthContext";
@@ -13,13 +12,13 @@ export default function AdminLayout({ children }) {
 
   useEffect(() => {
     // If user is loaded and is NOT an admin, kick them out immediately
-    if (user !== undefined && (!user || user.role !== "admin")) {
+    if (!isLoading && (!user || user.role !== "admin")) {
       router.replace("/"); // Redirect to landing or home page
     }
-  }, [user, router]);
+  }, [user, isLoading, router]);
 
   // 1. Show a clean loading state while checking permissions
-  if (user === undefined) {
+  if (isLoading || user === undefined) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-sm text-muted-foreground animate-pulse">Verifying credentials...</p>

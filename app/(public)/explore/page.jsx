@@ -23,6 +23,7 @@ import Autoplay from "embla-carousel-autoplay";
 import EventCard from "@/components/event-card"
 import { Card, CardContent } from "@/components/ui/card";
 import * as React from "react"
+import { duplexPair } from "node:stream";
 
 export default function ExplorePage() {
   const router = useRouter();
@@ -115,8 +116,9 @@ export default function ExplorePage() {
   );
 
   const { data: categoryCounts } = useConvexQuery(
-    api.explore.getCategoryCounts
+    api.explore.getCategoryCounts,  {dummy: true}
   );
+  console.log("Category counts fetched:", categoryCounts)
 
   const categoriesWithCounts = useMemo(() => {
     return CATEGORIES.map((cat) => ({

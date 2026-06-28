@@ -229,7 +229,8 @@ const coverImage = watch("coverImage");
           address: data.address || undefined,
           city: data.city,
           state: data.state || undefined,
-          country: "India",
+          country: "India", 
+          ticketType: data.ticketType,
 
           capacity: data.capacity,
           ticketPrice: data.ticketType === "paid" ? Number(data.ticketPrice) : undefined,
