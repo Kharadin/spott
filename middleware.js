@@ -24,7 +24,7 @@ export async function middleware(request) {
   );
 
   // #region agent log
-  fetch('http://127.0.0.1:7702/ingest/db15b427-9efe-4370-be8b-f9dc44e66b0e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cb2d6d'},body:JSON.stringify({sessionId:'cb2d6d',location:'middleware.js:25',message:'middleware route check',data:{path,isPublic,hasToken:!!cookies.get("session_token")?.value},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+  // fetch('http://127.0.0.1:7702/ingest/db15b427-9efe-4370-be8b-f9dc44e66b0e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cb2d6d'},body:JSON.stringify({sessionId:'cb2d6d',location:'middleware.js:25',message:'middleware route check',data:{path,isPublic,hasToken:!!cookies.get("session_token")?.value},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
   // #endregion
 
   if (isPublic) {
@@ -40,7 +40,7 @@ export async function middleware(request) {
     loginUrl.searchParams.set("showLogin", "true");
     loginUrl.searchParams.set("redirect", path); // Keep track of where they wanted to go
     // #region agent log
-    fetch('http://127.0.0.1:7702/ingest/db15b427-9efe-4370-be8b-f9dc44e66b0e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cb2d6d'},body:JSON.stringify({sessionId:'cb2d6d',location:'middleware.js:37',message:'middleware redirect to showLogin',data:{fromPath:path,redirectTo:loginUrl.toString()},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+    // fetch('http://127.0.0.1:7702/ingest/db15b427-9efe-4370-be8b-f9dc44e66b0e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cb2d6d'},body:JSON.stringify({sessionId:'cb2d6d',location:'middleware.js:37',message:'middleware redirect to showLogin',data:{fromPath:path,redirectTo:loginUrl.toString()},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
     // #endregion
     return NextResponse.redirect(loginUrl);
   }

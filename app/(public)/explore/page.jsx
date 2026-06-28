@@ -129,7 +129,7 @@ export default function ExplorePage() {
 
   const handleEventClick = (slug) => {
     // #region agent log
-    fetch('http://127.0.0.1:7702/ingest/db15b427-9efe-4370-be8b-f9dc44e66b0e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cb2d6d'},body:JSON.stringify({sessionId:'cb2d6d',location:'explore/page.jsx:129',message:'handleEventClick navigation',data:{slug,targetPath:`/events/${slug}`},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
+    // fetch('http://127.0.0.1:7702/ingest/db15b427-9efe-4370-be8b-f9dc44e66b0e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cb2d6d'},body:JSON.stringify({sessionId:'cb2d6d',location:'explore/page.jsx:129',message:'handleEventClick navigation',data:{slug,targetPath:`/events/${slug}`},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
     // #endregion
     router.push(`/events/${slug}`);
   };
