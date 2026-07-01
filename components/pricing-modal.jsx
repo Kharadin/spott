@@ -4,9 +4,11 @@ import { useState } from "react";
 import { Sparkles, Copy, Check, Mail } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import MoreInfoModal from "./moreInfoModal"; // <--- Import the new modal
 
 export default function PricingModal({ isOpen, onClose, trigger = 'limit' }) {
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isMoreInfoModalOpen, setIsMoreInfoModalOpen] = useState(false); // <--- New State
   const [copied, setCopied] = useState(false);
   const supportEmail = "support@yourdomain.com";
 
@@ -22,14 +24,9 @@ export default function PricingModal({ isOpen, onClose, trigger = 'limit' }) {
 
   return (
     <>
-      {/* Main Pricing Modal */}
+      {/* 1. The Main Pricing Modal */}
       <Dialog open={isOpen} onOpenChange={onClose}>
-        {/* 
-          [&>button]:scale-[3.5] makes the closing 'X' button massive.
-          [&>button_svg]:w-5 [&>button_svg]:h-5 changes the core icon stroke size.
-          [&>button]:top-7 [&>button]:right-7 offsets the positioning safely for the giant icon click target.
-        */}
-        <DialogContent className="w-[calc(100%-1.5rem)] max-w-full sm:max-w-3xl mx-auto [&>button]:text-gray-400 [&>button]:hover:text-gray-900 dark:[&>button]:hover:text-white [&>button]:scale-[3.5] [&>button]:top-10 [&>button]:right-10  max-h-[95vh] overflow-y-auto text-foreground">
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-full sm:max-w-3xl mx-auto [&>button]:text-gray-400 [&>button]:hover:text-gray-900 dark:[&>button]:hover:text-white [&>button]:scale-[3.5] [&>button]:top-10 [&>button]:right-10 max-h-[95vh] overflow-y-auto text-foreground">
           <DialogHeader>
             <div className='flex items-center gap-2 mb-2 pr-8'>
               <Sparkles className="w-6 h-6 text-indigo-500" />
@@ -37,14 +34,21 @@ export default function PricingModal({ isOpen, onClose, trigger = 'limit' }) {
             </div>
             <DialogDescription className="text-xl leading-relaxed text-gray-600 dark:text-gray-300">
               {trigger === 'header' && "Зарегистрируйтесь, чтобы создавать мероприятия. "}
-               Мероприятия на нашей платформе посвящены развитию (Мит-апы, ретриты, конференции, тренинги, семинары и другие).
+               Мероприятия на нашей платформе посвящены {" "}
+               {/* THE TRIGGER LINK */}
+               <span 
+                 onClick={() => setIsMoreInfoModalOpen(true)}
+                 className="text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 cursor-pointer underline decoration-dotted transition-colors"
+               >  развитию{" "}
+                 (Мит-апы, ретриты, конференции, тренинги, семинары и другие)
+               </span>.
             </DialogDescription>
           </DialogHeader>
 
           {/* Pricing Grid Table */}
           <div className="my-2 overflow-x-auto border border-gray-200 rounded-xl dark:border-gray-800">
             <table className="w-full text-xs sm:text-sm text-left text-gray-500 dark:text-gray-400 border-collapse">
-              <thead className="text-[10px] sm:text-xs text-gray-700  bg-gray-50 dark:bg-gray-800 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+              <thead className="text-[10px] sm:text-xs text-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
                 <tr>
                   <th scope="col" className="px-2 sm:px-4 py-3 font-bold text-gray-900 dark:text-white sticky left-0 bg-gray-50 dark:bg-gray-800 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">МЕРОПРИЯТИЯ</th>
                   <th scope="col" className="px-2 sm:px-4 py-3 text-center font-semibold whitespace-nowrap">До 50 чел</th>
@@ -109,66 +113,46 @@ export default function PricingModal({ isOpen, onClose, trigger = 'limit' }) {
             <Button variant="outline" onClick={onClose} className="flex-1">
               Может позже
             </Button>
-            <Button 
-              onClick={() => setIsEmailModalOpen(true)} 
-              className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition-colors"
-            >
-              Написать Админу
+            <Button onClick={() => setIsEmailModalOpen(true)} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white">
+              <Mail className="w-4 h-4 mr-2" />
+              Связаться с нами
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Explicit Support Email Sub-Modal */}
+      {/* 2. The Email Modal (Existing) */}
       <Dialog open={isEmailModalOpen} onOpenChange={setIsEmailModalOpen}>
-        {/* Same macro scale factor rules aчелy here for layout consistency across overlays */}
-        <DialogContent className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-xl p-6 [&>button]:text-gray-400 [&>button]:hover:text-gray-900 dark:[&>button]:hover:text-white [&>button]:scale-[3.5] [&>button_svg]:w-3 [&>button_svg]:h-3 [&>button]:top-7 [&>button]:right-9">
+        <DialogContent className="sm:max-w-md [&>button]:text-gray-400 [&>button]:hover:text-gray-900 dark:[&>button]:hover:text-white">
           <DialogHeader>
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 mb-2">
-              <Mail className="h-6 w-6" />
-            </div>
-            <DialogTitle className="text-xl text-center">Написать Админу</DialogTitle>
-            <DialogDescription className="text-center text-sm text-gray-500 dark:text-gray-400">
-              Контакты для объявлений о меропрятиях и размещения рекламы
+            <DialogTitle>Служба поддержки</DialogTitle>
+            <DialogDescription>
+              Свяжитесь с нами по любым вопросам или индивидуальным предложениям.
             </DialogDescription>
           </DialogHeader>
-
-          {/* Email Box Area */}
-          <div className="flex items-center justify-between gap-2 border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 p-3 rounded-lg mt-2 select-all">
-            <span className="text-sm font-mono text-gray-800 dark:text-gray-200 break-all">
-              {supportEmail}
-            </span>
-            <Button 
-              size="icon" 
-              variant="ghost" 
-              onClick={handleCopyEmail} 
-              className="h-8 w-8 shrink-0 text-gray-500 hover:text-gray-900 dark:hover:text-white" 
-              title="Скопировать почту"
-            >
-              {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+          <div className="flex items-center space-x-2 mt-4">
+            <div className="grid flex-1 gap-2">
+              <div className="flex items-center justify-between px-3 py-2 border rounded-md bg-muted/50">
+                <span className="text-sm font-medium">{supportEmail}</span>
+              </div>
+            </div>
+            <Button onClick={handleCopyEmail} size="icon" className="px-3">
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             </Button>
           </div>
-
-          <div className="flex flex-col gap-3 mt-6 w-full">
-            <a 
-              href={`mailto:${supportEmail}?subject=Event%20Pricing%20Inquiry`} 
-              className="w-full"
-            >
-              <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors">
-                Открыть почту
-              </Button>
-            </a>
-            
-            <Button 
-              variant="outline" 
-              onClick={() => setIsEmailModalOpen(false)} 
-              className="w-full text-sm text-foreground"
-            >
+          <div className="flex justify-end mt-4">
+            <Button variant="secondary" onClick={() => setIsEmailModalOpen(false)}>
               Закрыть
             </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* 3. The New Event Types Modal (Rendered as a sibling) */}
+      <MoreInfoModal  
+        isOpen={isMoreInfoModalOpen} 
+        onClose={() => setIsMoreInfoModalOpen(false)} 
+      />
     </>
   );
 }

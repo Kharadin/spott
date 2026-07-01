@@ -1,5 +1,7 @@
 // convex/admin.js
-import { mutation, query } from "./_generated/server";
+import { mutation, query, action } from "./_generated/server";
+import {api} from "./_generated/api";
+
 import { v } from "convex/values";
 import { checkAdminStatus, verifyIdentity } from "./auth.helpers";
 
@@ -24,11 +26,25 @@ export const toggleReviewEvent = mutation({
   args: { token: v.string(),
     id: v.id("events"), review: v.boolean() },
   handler: async (ctx, args) => {
-    const rawUserId = await verifyIdentity(args.token);
+    const rawAdminId = await verifyIdentity(args.token);
     // NOrmalize string into a strict Convex ID object
-    const userId = ctx.db.normalizeId("users", rawUserId);
-    await checkAdminStatus(ctx, userId );
+    const adminId = ctx.db.normalizeId("users", rawAdminId);
+    await checkAdminStatus(ctx, adminId );
+
+    const event = await ctx.db.get(args.id);
+    if (!event || !!event.reviewed === args.review) return;
+
     await ctx.db.patch(args.id, { reviewed: args.review });
+  
+    const {email} = await ctx.db.get(event.organizerId); // getting it from users table by user id  
+    const eventTitle =event.title;
+
+    
+    await ctx.scheduler.runAfter(0, api.admin.sendReviewedNotification, { 
+            eventTitle,
+            email
+
+          });
   }
 });
 
@@ -37,16 +53,19 @@ export const togglePublishEvent = mutation({
   args: { token: v.string(),
     id: v.id("events"), publish: v.boolean() },
   handler: async (ctx, args) => {
-     const rawUserId = await verifyIdentity(args.token);
+     const rawAdminId = await verifyIdentity(args.token);
      // NOrmalize string into a strict Convex ID object
-    const userId = ctx.db.normalizeId("users", rawUserId);
-    await checkAdminStatus(ctx, userId );
+    const adminId = ctx.db.normalizeId("users", rawAdminId);
+    await checkAdminStatus(ctx, adminId );
 
     const event = await ctx.db.get(args.id);
     if (!event || !!event.published === args.publish) return;
 
     await ctx.db.patch(args.id, { published: args.publish });
 
+
+    const {email} = await ctx.db.get(event.organizerId); // getting it from users table by user id  
+    const eventTitle =event.title;
     // Only modify numbers if the event isn't currently cancelled
     if (!event.cancelled) {
       const changeAmount = args.publish ? 1 : -1;
@@ -54,6 +73,11 @@ export const togglePublishEvent = mutation({
       console.log(`Category ${event.category} count updated by ${changeAmount}`);
       console.log(`New count: ${(await ctx.db.query("categoryCounts").withIndex("by_category", (q) => q.eq("category", event.category)).unique()).count}`);
     }
+     // send email notification
+    await ctx.scheduler.runAfter(0, api.admin.sendPublishedNotification, { 
+            eventTitle,
+            email
+          });
   },
 });
 
@@ -62,10 +86,10 @@ export const toggleCancelEvent = mutation({
   args: { token: v.string(),
     id: v.id("events"), cancel: v.boolean() },
   handler: async (ctx, args) => {
-     const rawUserId = await verifyIdentity(args.token);
+     const rawAdminId = await verifyIdentity(args.token);
      // NOrmalize string into a strict Convex ID object
-    const userId = ctx.db.normalizeId("users", rawUserId);
-    await checkAdminStatus(ctx, userId );
+    const adminId = ctx.db.normalizeId("users", rawAdminId);
+    await checkAdminStatus(ctx, adminId );
 
     const event = await ctx.db.get(args.id);
     if (!event || !!event.cancelled === args.cancel) return;
@@ -77,6 +101,9 @@ export const toggleCancelEvent = mutation({
       const changeAmount = args.cancel ? -1 : 1;
       await txUpdateCounter(ctx, event.category, changeAmount);
     }
+
+  
+
   },
 });
 
@@ -148,3 +175,50 @@ export const getAdminEventsPage = query({
   },
 });
 
+
+export const sendReviewedNotification = action ({
+   args: {eventTitle: v.string(),
+          email: v.string()
+        },
+   handler: async (ctx, args) => {
+    const resendKey  = process.env.RESEND_API_KEY;
+    await fetch ("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${resendKey}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            from: "Spott Alerts <onboarding@resend.dev>", 
+            to: args.email,
+            subject: "Your event review status has been changed",
+            html: `<p> Your event review status has been changed: <strong>${args.eventTitle}</strong></p>`
+        })
+    })
+    console.log("Review notification sent");
+} 
+  
+})
+
+export const sendPublishedNotification = action ({
+    args: {eventTitle: v.string(),
+          email: v.string()
+        },
+    handler: async (ctx, args) => {
+        const resendKey  = process.env.RESEND_API_KEY;
+        await fetch ("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${resendKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                from: "Spott Alerts <onboarding@resend.dev>", 
+                to: args.email,
+                subject: "Your event publish status has been changed",
+                html: `<p> Your event publish status has been changed: <strong>${args.eventTitle}</strong></p>`
+            })
+        })
+        console.log("Published notification sent");
+    }
+})

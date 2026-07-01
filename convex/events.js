@@ -255,7 +255,6 @@ export const sendAdminNotification = action ({
     args: {eventTitle: v.string()},
     handler: async (ctx, args) => {
         const resendKey  = process.env.RESEND_API_KEY;
-
         await fetch ("https://api.resend.com/emails", {
             method: "POST",
             headers: {

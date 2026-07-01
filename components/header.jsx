@@ -106,9 +106,9 @@ const Header = () => {
             {/* CUSTOM AUTHENTICATED STATE */}
             {user ? (
               <>
-                <Button variant={"ghost"} size="sm" asChild>
+                {/* <Button variant={"ghost"} size="sm" asChild>
                   <Link href="/explore">Explore</Link>
-                </Button>
+                </Button> */}
                 <Button size="sm" asChild className="flex gap-2 mr-2">
                   <Link href="/create-event">
                     <Plus className="h-4 w-4" />
