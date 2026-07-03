@@ -213,8 +213,14 @@ export const checkInAttendee = mutation({
       throw new Error("Event not found");
     }
 
+
+    const user = await ctx.db.get(userId);
+    if (!user) {
+      throw new Error("User profile record not found");
+    }
+
     // 3. Check if the scanning user is the organizer using the normalized ID
-    if (event.organizerId !== userId) {
+    if (event.organizerId !== userId && user.role !== "admin") {
       throw new Error("You are not authorized to check in attendees for this event");
     }
 
@@ -261,6 +267,11 @@ export const getEventRegistrations = query({
     if (!userId) {
       throw new Error("Invalid user identity format");
     }
+     const user = await ctx.db.get(userId);
+    if (!user) {
+      throw new Error("User profile record not found");
+    }
+
 
     const event = await ctx.db.get(args.eventId);
     if (!event) {
@@ -268,7 +279,7 @@ export const getEventRegistrations = query({
     }
 
     // 3. Check if the viewing user is the actual organizer using the normalized ID
-    if (event.organizerId !== userId) {
+    if ( user.role !== "admin" && event.organizerId !== userId ) {
       throw new Error("You are not the organizer of this event");
     }
     

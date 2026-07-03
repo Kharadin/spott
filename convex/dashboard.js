@@ -18,7 +18,7 @@ export const getEventDashboard = query({
 
     const user = await ctx.db.get(userId);
     if (!user) {
-      throw new Error("User profile records not found");
+      throw new Error("User profile record not found");
     }
 
     const event = await ctx.db.get(args.eventId);
@@ -27,8 +27,9 @@ export const getEventDashboard = query({
     }
 
     // Check if the user is the organizer 
-    if (event.organizerId !== user._id) {
-      throw new Error("You are not the organizer of this event");
+    console.log(event.organizerId, user._id, user.role)
+    if (user.role !== "admin" && event.organizerId !== user._id) {
+      throw new Error("You are not the organizer of this event / admin");
     }
 
     // Get all registrations
