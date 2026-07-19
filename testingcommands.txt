@@ -1,0 +1,26 @@
+Command 1: Direct Convex TestCopy these 4 parts one by one, remove any spaces between them, and paste them as a single line into your terminal
+
+:Part 1: 
+curl -I https://brave-dinosaur-650.convex.cloud/api/storage/0f7caaae-605f-4ffc-b49e-7290e70cce00
+Part 2: 
+Part 3: 
+Part 4: 
+
+
+Command 2: Your Local Nginx Proxy TestCopy these 4 parts, glue them together with zero spaces between them, and run the complete command twice in a row:Part 1: 
+curl -v -o /dev/null https://bereg-go.ru/event-images/0f7caaae-605f-4ffc-b49e-7290e70cce00
+
+Part 2:Part 3: event-images/Part 4: Assemble these in your prompt, run them on your server, and tell me:
+
+
+https://www.1gb.ru/adm-alv5/?u=1021720#/c/as
+
+ Это важно! Запишите данные доступа!
+Ваш логин:       dmitry.kharadin@gmail.com
+
+Ваш пароль:    yz47RsRW4p6K
+
+
+
+gohost
+CK5@fjBJS2sGBBb 
