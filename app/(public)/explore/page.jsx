@@ -35,7 +35,7 @@ export default function ExplorePage() {
 
 
 
-  // 1. Fetch user via Next.js API (since Convex ctx.auth is now null)
+  // 1. Fetch user via Next.js API (since Convex ctx.auth is now null) )
   const [currentUser, setCurrentUser] = useState(null);
 
   const fetchUser = useCallback(async () => {
