@@ -1,12 +1,14 @@
-# 1. Define the local cache database path (placed outside the server block)
+# 1. Define the local cache database path
 proxy_cache_path /var/cache/nginx/convex_images levels=1:2 keys_zone=convex_image_cache:10m max_size=5g inactive=30d use_temp_path=off;
 
 server {
     server_name bereg-go.ru www.bereg-go.ru;
 
- # FORCE NGINX TO RESOLVE USING ONLY IPV4
+    # Force using IPv4 for international routing stability
     resolver 8.8.8.8 ipv6=off;
-        add_header X-Cache-Status $upstream_cache_status;
+
+    # Custom cache status tracking header
+    add_header X-Cache-Status $upstream_cache_status;
 
     # ==========================================
     # ROUTE 1: WEBSOCKET PROXY (Convex Real-time)
@@ -26,8 +28,8 @@ server {
         proxy_ssl_name brave-dinosaur-650.convex.cloud;
     }
 
-            # =======================================
-             # ROUTE 2: IMAGE CACHE (Saves Convex Traffic)
+    # ==========================================
+    # ROUTE 2: IMAGE CACHE (Saves Convex Traffic)
     # ==========================================
     location ~ ^/event-images/(.*)$ {
         proxy_cache convex_image_cache;
@@ -35,46 +37,41 @@ server {
         proxy_cache_lock on;
         proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
 
-        # 1. Standard header ignoring
+        # Strip cache limits to force permanent disk caching
         proxy_ignore_headers Cache-Control Expires Set-Cookie X-Accel-Expires;
 
-        # 2. Hard cache mechanic override (Forces caching of 'private' responses) // Deleted.
-        proxy_pass https://brave-dinosaur-650.convex.cloud/api/storage/$1$is_args$args;
+        # Forward the captured image path and any query strings
+        proxy_pass https://convex.cloud/api/storage/$1$is_args$args;
 
         proxy_ssl_server_name on;
         proxy_ssl_name brave-dinosaur-650.convex.cloud;
         proxy_set_header Host brave-dinosaur-650.convex.cloud;
-
-          # 3. Strip cookies and Vary headers so Nginx treats the file as generic/cacheable
-
+        
+        # Strip downstream headers to prevent clients from bypassing cache
         proxy_hide_header Set-Cookie;
         proxy_hide_header Vary;
-                # Hide all headers that prevent public storage
-         proxy_hide_header Cache-Control;
+        proxy_hide_header Cache-Control;
         proxy_hide_header Expires;
     }
 
-
-    # Keep your exact Certbot SSL lines completely untouched
-    #   listen 443 ssl; # managed by Certbot
-   # ssl_certificate /etc/letsencrypt/live/bereg-go.ru/fullchain.pem; # managed by Certbot
-   # ssl_certificate_key /etc/letsencrypt/live/bereg-go.ru/privkey.pem; # managed by Certbot
-   # include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
-    #        ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+    # Certbot SSL lines (Make sure these match your newly generated paths)
+    listen 443 ssl;
+    ssl_certificate /etc/letsencrypt/live/bereg-go.ru/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/bereg-go.ru/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 }
 
-# The automated port 80 to 443 HTTPS redirect (managed by Certbot)
+# Automated HTTP to HTTPS redirect
 server {
     if ($host = www.bereg-go.ru) {
         return 301 https://$host$request_uri;
-    } # managed by Certbot
-
+    }
     if ($host = bereg-go.ru) {
         return 301 https://$host$request_uri;
-    } # managed by Certbot
+    }
 
     listen 80;
-    server_name bereg-go.ru www.bereg-go.ru;
-    return 404; # managed by Certbot
+        server_name bereg-go.ru www.bereg-go.ru;
+    return 404;
 }
-

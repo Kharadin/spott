@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    loader: 'custom',
+    loaderFile: './image-loader.js',
     remotePatterns: [
       {
         protocol: 'https',
@@ -24,7 +26,8 @@ const nextConfig = {
         pathname: '/api/storage/**',
       },
     ],
-    unoptimized: process.env.NODE_ENV === 'development', 
+    // unoptimized: process.env.NODE_ENV === 'development', 
+    unoptimized: false
   },
   staticPageGenerationTimeout: 120, 
 }
