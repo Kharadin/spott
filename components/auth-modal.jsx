@@ -1,17 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react"; // Added Suspense import
 import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 
-
-export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
-
+// 1. Rename your inner logic function so we can wrap it
+function AuthModalContent({ isOpen, onClose, onAuthSuccess }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-    // 1. Capture the 'redirect' param from the URL
-  // If no redirect is present (e.g. user clicked login manually), default to /explore
+  // Capture the 'redirect' param from the URL safely inside Suspense
   const redirectTo = searchParams.get("redirect") || "/explore";
 
   const [isSignUp, setIsSignUp] = useState(false);
@@ -50,12 +48,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
         localStorage.setItem("convex_token", data.token);
       }
       
-      // Success! Pass user metadata up to the header state layer
       onAuthSuccess(data.user);
-            // 2. Redirect the user to their intended destination
       router.push(redirectTo);
-      
-      // Force a refresh to ensure Server Components recognize the new cookie
       router.refresh(); 
 
     } catch (err) {
@@ -63,7 +57,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       setLoading(false);
     }
   };
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-xs">
       <div className="bg-white text-black p-6 rounded-lg w-full max-w-sm relative shadow-2xl mx-4">
@@ -127,5 +120,13 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
         </p>
       </div>
     </div>
+  );
+}
+// 2. Export the component wrapped inside a global Suspense boundary
+export default function AuthModal(props) {
+  return (
+    <Suspense fallback={null}>
+      <AuthModalContent {...props} />
+    </Suspense>
   );
 }

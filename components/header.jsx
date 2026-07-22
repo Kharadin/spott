@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, Suspense} from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Building, Plus, Ticket } from "lucide-react";
@@ -16,7 +16,7 @@ import { useAuth } from "@/app/context/AuthContext";
 
 const Header = () => {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  // const searchParams = useSearchParams();
   // Use shared auth context instead of local state
   const { user, token, isLoading: authLoading, refreshUser } = useAuth();
   // Keep local isLoading for explicit actions (sign out)
@@ -32,15 +32,7 @@ const Header = () => {
 
   const { showOnboarding, handleOnboardingComplete, handleOnboardingSkip } = useOnboarding();
 
-  useEffect(() => {
-    // Automatically open the login modal if the URL contains showLogin=true
-    if (searchParams.get("showLogin") === "true" && !user && !authLoading) {
-      // #region agent log
-      // fetch('http://127.0.0.1:7702/ingest/db15b427-9efe-4370-be8b-f9dc44e66b0e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cb2d6d'},body:JSON.stringify({sessionId:'cb2d6d',location:'header.jsx:30',message:'opening auth modal from showLogin param',data:{showLogin:searchParams.get("showLogin"),redirect:searchParams.get("redirect"),hasUser:!!user,pathname:typeof window!=='undefined'?window.location.pathname:null},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
-      // // #endregion
-      setShowAuthModal(true);
-    }
-  }, [searchParams, user, authLoading]);
+  
 
   const handleSignOut = async () => {
     setActionLoading(true);
@@ -143,9 +135,7 @@ const Header = () => {
             ) : (
               /* CUSTOM UNAUTHENTICATED STATE */
               <Button size="sm" onClick={() => {
-                // #region agent log
-                // fetch('http://127.0.0.1:7702/ingest/db15b427-9efe-4370-be8b-f9dc44e66b0e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cb2d6d'},body:JSON.stringify({sessionId:'cb2d6d',location:'header.jsx:127',message:'opening auth modal from sign in button',data:{source:'signInButton'},timestamp:Date.now(),hypothesisId:'E'})}).catch(()=>{});
-                // #endregion
+        
                 setShowAuthModal(true);
               }}>
                 Sign In
@@ -178,28 +168,50 @@ const Header = () => {
         onClose={() => setShowPricingModal(false)} 
         trigger='header'
       />
-      <AuthModal 
-        isOpen={showAuthModal}
-        onClose={() => {
-          // #region agent log
-          // fetch('http://127.0.0.1:7702/ingest/db15b427-9efe-4370-be8b-f9dc44e66b0e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cb2d6d'},body:JSON.stringify({sessionId:'cb2d6d',location:'header.jsx:165',message:'auth modal closed',data:{showLoginInUrl:searchParams.get("showLogin"),redirect:searchParams.get("redirect")},timestamp:Date.now(),hypothesisId:'B',runId:'post-fix'})}).catch(()=>{});
-          // #endregion
-          setShowAuthModal(false);
-          if (searchParams.get("showLogin") === "true") {
-            const nextParams = new URLSearchParams(searchParams.toString());
-            nextParams.delete("showLogin");
-            nextParams.delete("redirect");
-            const qs = nextParams.toString();
-            router.replace(qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
-          }
-        }}
-        onAuthSuccess={() => {
-          refreshUser();
-          setShowAuthModal(false);
-        }}
-      />
+        {/* REPLACE YOUR OLD AUTHMODAL WITH THIS SUSPENSE BLOCK */}
+      <Suspense fallback={null}>
+        <AuthModalWrapper 
+          showAuthModal={showAuthModal}
+          setShowAuthModal={setShowAuthModal}
+          user={user}
+          authLoading={authLoading}
+          refreshUser={refreshUser}
+          router={router}
+        />
+      </Suspense>
     </>
   );
 };
+
+const AuthModalWrapper = ({ showAuthModal, setShowAuthModal, user, authLoading, refreshUser, router }) => {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("showLogin") === "true" && !user && !authLoading) {
+      setShowAuthModal(true);
+    }
+  }, [searchParams, user, authLoading, setShowAuthModal]);
+
+  return (
+    <AuthModal 
+      isOpen={showAuthModal}
+      onClose={() => {
+        setShowAuthModal(false);
+        if (searchParams.get("showLogin") === "true") {
+          const nextParams = new URLSearchParams(searchParams.toString());
+          nextParams.delete("showLogin");
+          nextParams.delete("redirect");
+          const qs = nextParams.toString();
+          router.replace(qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
+        }
+      }}
+      onAuthSuccess={() => {
+        refreshUser();
+        setShowAuthModal(false);
+      }}
+    />
+  );
+};
+
 
 export default Header;
