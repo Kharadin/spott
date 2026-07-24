@@ -15,18 +15,19 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
-      // ADD THIS PATTERN FOR CONVEX STORAGE FILES
+      // 1. Pattern for Convex Subdomain Traffic (Fallback/Direct)
       {
         protocol: 'https',
-        // Looks for your deployment URL hostname dynamically from your ENV file
-        // e.g. "quiet-wolf-123.convex.cloud" or "your-project.convex.site"
-        hostname: process.env.NEXT_PUBLIC_CONVEX_URL
-          ? process.env.NEXT_PUBLIC_CONVEX_URL.replace('https://', '')
-          : '*.convex.cloud', 
+        hostname: 'brave-dinosaur-650.convex.cloud',
         pathname: '/api/storage/**',
       },
+      // 2. Pattern for your Kazakhstan Proxy Image Endpoint (Crucial for Production)
+      {
+        protocol: 'https',
+        hostname: 'proxy.bereg-go.ru',
+        pathname: '/event-images/**', // <--- Matches your loader output
+      },
     ],
-    // unoptimized: process.env.NODE_ENV === 'development', 
     unoptimized: false
   },
   staticPageGenerationTimeout: 120, 

@@ -4,7 +4,7 @@ export default function convexImageLoader({ src }) {
 
   if (src && src.includes('/api/storage/')) {
     const storageId = src.split('/api/storage/').pop();
-    return `https://bereg-go.ru/event-images/${storageId}`;
+    return `https://proxy.bereg-go.ru/event-images/${storageId}`;
   }
   
   return src;
