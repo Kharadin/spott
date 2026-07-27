@@ -8,7 +8,7 @@ import { BarLoader } from "react-spinners";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import OnboardingModal from "./onboarding-modal";
 import SearchLocationBar from "./search-location-bar";
-import AuthModal from "./auth-modal"; // Your new custom login/signup modal
+import AuthModal from "./auth-modal"; 
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import PricingModal from "./pricing-modal";
@@ -16,10 +16,7 @@ import { useAuth } from "@/app/context/AuthContext";
 
 const Header = () => {
   const router = useRouter();
-  // const searchParams = useSearchParams();
-  // Use shared auth context instead of local state
   const { user, token, isLoading: authLoading, refreshUser } = useAuth();
-  // Keep local isLoading for explicit actions (sign out)
   const [actionLoading, setActionLoading] = useState(false);
   const isLoading = authLoading || actionLoading;
 
@@ -29,10 +26,7 @@ const Header = () => {
   const menuRef = useRef(null);
   const buttonRef = useRef(null);
 
-
   const { showOnboarding, handleOnboardingComplete, handleOnboardingSkip } = useOnboarding();
-
-  
 
   const handleSignOut = async () => {
     setActionLoading(true);
@@ -46,7 +40,6 @@ const Header = () => {
     }
   };
 
-  // Click outside to close the user menu
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -74,14 +67,28 @@ const Header = () => {
     setMenuOpen((prev) => !prev);
   }, []);
 
-
   return (
     <>
-      <nav className='fixed top-0 left-0 right-0 bg-background/20 backdrop-saturate-150 drop-blur-xl z-20 border-b border-zinc-200/50'>
-        <div className='max-w-7xl mx-auto px-6 py-2 flex items-center justify-between'>
-          {/* Logo */}
-          <Link href={"/"} className='flex items-center z-10'>
-            <Image src="/spott.png" alt="Spott Logo" width={500} height={500} className='w-full h-14' priority />
+      {/* FIX 1: Changed drop-blur-xl to backdrop-blur-xl and added styles property fallback for Safari compatibility */}
+      <nav 
+        className='fixed top-0 left-0 right-0 bg-background/70 backdrop-saturate-150 backdrop-blur-xl z-20 border-b border-zinc-200/50'
+        style={{ WebkitBackdropFilter: "saturate(150%) blur(24px)" }}
+      >
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center justify-between gap-2'>
+          
+          {/* Logo Container */}
+          {/* FIX 2: Set structural wrapper parameters around image so Safari doesn't swell sizing */}
+          <Link href={"/"} className='flex items-center z-10 shrink-0'>
+            <div className="relative h-10 w-28 sm:w-32">
+              <Image 
+                src="/spott.png" 
+                alt="Spott Logo" 
+                fill
+                sizes="(max-w-768px) 112px, 128px"
+                className='object-contain object-left' 
+                priority 
+              />
+            </div>
           </Link>
 
           {/* CLEAN CENTERED SEARCH BAR */}
@@ -90,33 +97,29 @@ const Header = () => {
           </div>
 
           {/* Right Side actions */}
-          <div className='flex items-center z-10 gap-2'>
-            <Button variant="ghost" size="sm" onClick={() => setShowPricingModal(true)}>
+          {/* FIX 3: Added shrink-0 to prevent layout engine from crushing buttons on mobile viewports */}
+          <div className='flex items-center z-10 gap-1.5 sm:gap-2 shrink-0'>
+            <Button variant="ghost" size="sm" className="px-2 sm:px-3 text-xs sm:text-sm" onClick={() => setShowPricingModal(true)}>
               Info
             </Button>
 
             {/* CUSTOM AUTHENTICATED STATE */}
             {user ? (
               <>
-                {/* <Button variant={"ghost"} size="sm" asChild>
-                  <Link href="/explore">Explore</Link>
-                </Button> */}
-                <Button size="sm" asChild className="flex gap-2 mr-2">
+                <Button size="sm" asChild className="flex gap-1.5 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
                   <Link href="/create-event">
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     <span className='hidden sm:inline'>Create Event</span>
                   </Link>
                 </Button>
 
-                {/* Simplified replacement for Clerk's UserButton dropdown styling */}
-                <div className="relative" ref={menuRef}>
-                  <Button ref={buttonRef} variant="outline" size="sm" className="rounded-full w-8 h-8 p-0 overflow-hidden" onClick={toggleMenu} aria-expanded={menuOpen} aria-haspopup="true">
-                    <Image src={user.imageUrl || "/avatar-fallback.png"} alt="User profile" width={32} height={32} />
+                <div className="relative flex items-center" ref={menuRef}>
+                  <Button ref={buttonRef} variant="outline" size="sm" className="rounded-full w-8 h-8 p-0 overflow-hidden shrink-0" onClick={toggleMenu} aria-expanded={menuOpen} aria-haspopup="true">
+                    <Image src={user.imageUrl || "/avatar-fallback.png"} alt="User profile" width={32} height={32} className="w-full h-full object-cover" />
                   </Button>
-                  {/* Dropdown Menu on Hover/Click */}
-                  {menuOpen && 
-                   (
-                   <div className="absolute right-0 mt-2 w-48 bg-white border rounded-md shadow-lg py-1 text-black text-sm z-50">
+                  
+                  {menuOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-white border rounded-md shadow-lg py-1 text-black text-sm z-50">
                       <Link href="/my-tickets" className="flex items-center gap-2 px-4 py-2 hover:bg-zinc-100" onClick={() => setMenuOpen(false)}>
                         <Ticket size={16} /> My Tickets
                       </Link>
@@ -128,16 +131,12 @@ const Header = () => {
                         Sign Out
                       </button>
                     </div>
-                   )}
+                  )}
                 </div>
-                
               </>
             ) : (
               /* CUSTOM UNAUTHENTICATED STATE */
-              <Button size="sm" onClick={() => {
-        
-                setShowAuthModal(true);
-              }}>
+              <Button size="sm" className="text-xs sm:text-sm px-3" onClick={() => setShowAuthModal(true)}>
                 Sign In
               </Button>
             )}
@@ -145,7 +144,7 @@ const Header = () => {
         </div>
 
         {/* Mobile Search and Locations - Below Header */}
-        <div className='md:hidden border-t px-3 py-3'>
+        <div className='md:hidden border-t px-3 py-2 bg-background/50'>
           <SearchLocationBar />
         </div>
 
@@ -168,7 +167,6 @@ const Header = () => {
         onClose={() => setShowPricingModal(false)} 
         trigger='header'
       />
-        {/* REPLACE YOUR OLD AUTHMODAL WITH THIS SUSPENSE BLOCK */}
       <Suspense fallback={null}>
         <AuthModalWrapper 
           showAuthModal={showAuthModal}
@@ -212,6 +210,5 @@ const AuthModalWrapper = ({ showAuthModal, setShowAuthModal, user, authLoading, 
     />
   );
 };
-
 
 export default Header;
