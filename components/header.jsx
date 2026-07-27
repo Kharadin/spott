@@ -69,51 +69,80 @@ const Header = () => {
 
   return (
     <>
-      {/* FIX 1: Changed drop-blur-xl to backdrop-blur-xl and added styles property fallback for Safari compatibility */}
+      {/* 
+        FIX 1: ULTRALIGHT GLASS EFFECT 
+        Using bg-white/10 for high transparency. 
+        Inline styles explicitly force iOS Safari/Opera WebKit to render the frosted glass blur.
+      */}
       <nav 
-        className='fixed top-0 left-0 right-0 bg-background/70 backdrop-saturate-150 backdrop-blur-xl z-20 border-b border-zinc-200/50'
-        style={{ WebkitBackdropFilter: "saturate(150%) blur(24px)" }}
+        className='fixed top-0 left-0 right-0 bg-white/10 backdrop-blur-md backdrop-saturate-150 z-20 border-b border-zinc-200/30'
+        style={{ 
+          WebkitBackdropFilter: "blur(12px) saturate(150%)",
+          backgroundColor: "rgba(255, 255, 255, 0.12)" 
+        }}
       >
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center justify-between gap-2'>
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center justify-between gap-4'>
           
-          {/* Logo Container */}
-          {/* FIX 2: Set structural wrapper parameters around image so Safari doesn't swell sizing */}
+          {/* 
+            FIX 2: SEPARATED PC & MOBILE LOGO 
+            PC shows your exact original large image layout. 
+            Mobile utilizes a constrained container to block Safari swelling while keeping it crisp.
+          */}
           <Link href={"/"} className='flex items-center z-10 shrink-0'>
-            <div className="relative h-10 w-28 sm:w-32">
+            {/* Desktop Logo (Visible on md and up) */}
+            <div className="hidden md:block">
+              <Image 
+                src="/spott.png" 
+                alt="Spott Logo" 
+                width={500} 
+                height={500} 
+                className='w-auto h-14' 
+                priority 
+              />
+            </div>
+            {/* Mobile/Tablet Logo (Visible below md) */}
+            <div className="block md:hidden relative h-10 w-24 sm:w-28">
               <Image 
                 src="/spott.png" 
                 alt="Spott Logo" 
                 fill
-                sizes="(max-w-768px) 112px, 128px"
+                sizes="112px"
                 className='object-contain object-left' 
                 priority 
               />
             </div>
           </Link>
 
-          {/* CLEAN CENTERED SEARCH BAR */}
+          {/* CLEAN CENTERED SEARCH BAR (DESKTOP) */}
           <div className='hidden md:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10'>
             <SearchLocationBar />
           </div>
 
-          {/* Right Side actions */}
-          {/* FIX 3: Added shrink-0 to prevent layout engine from crushing buttons on mobile viewports */}
-          <div className='flex items-center z-10 gap-1.5 sm:gap-2 shrink-0'>
-            <Button variant="ghost" size="sm" className="px-2 sm:px-3 text-xs sm:text-sm" onClick={() => setShowPricingModal(true)}>
+          {/* 
+            FIX 3: INFO BUTTON MOBILITY
+            Added min-w-[40px] and structure modifications so WebKit engines do not squeeze 'Info' to 0 width.
+          */}
+          <div className='flex items-center z-10 gap-2 shrink-0 ml-auto md:ml-0'>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="px-2 sm:px-3 text-sm font-medium shrink-0 min-w-[45px] hover:bg-white/20" 
+              onClick={() => setShowPricingModal(true)}
+            >
               Info
             </Button>
 
             {/* CUSTOM AUTHENTICATED STATE */}
             {user ? (
               <>
-                <Button size="sm" asChild className="flex gap-1.5 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
+                <Button size="sm" asChild className="flex gap-1.5 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 shrink-0">
                   <Link href="/create-event">
-                    <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <Plus className="h-4 w-4" />
                     <span className='hidden sm:inline'>Create Event</span>
                   </Link>
                 </Button>
 
-                <div className="relative flex items-center" ref={menuRef}>
+                <div className="relative flex items-center shrink-0" ref={menuRef}>
                   <Button ref={buttonRef} variant="outline" size="sm" className="rounded-full w-8 h-8 p-0 overflow-hidden shrink-0" onClick={toggleMenu} aria-expanded={menuOpen} aria-haspopup="true">
                     <Image src={user.imageUrl || "/avatar-fallback.png"} alt="User profile" width={32} height={32} className="w-full h-full object-cover" />
                   </Button>
@@ -136,7 +165,7 @@ const Header = () => {
               </>
             ) : (
               /* CUSTOM UNAUTHENTICATED STATE */
-              <Button size="sm" className="text-xs sm:text-sm px-3" onClick={() => setShowAuthModal(true)}>
+              <Button size="sm" className="text-sm px-3 shrink-0" onClick={() => setShowAuthModal(true)}>
                 Sign In
               </Button>
             )}
@@ -144,7 +173,7 @@ const Header = () => {
         </div>
 
         {/* Mobile Search and Locations - Below Header */}
-        <div className='md:hidden border-t px-3 py-2 bg-background/50'>
+        <div className='md:hidden border-t px-3 py-2 bg-white/5 backdrop-blur-md'>
           <SearchLocationBar />
         </div>
 
