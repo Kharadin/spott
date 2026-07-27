@@ -75,10 +75,10 @@ const Header = () => {
         Inline styles explicitly force iOS Safari/Opera WebKit to render the frosted glass blur.
       */}
       <nav 
-        className='fixed top-0 left-0 right-0 bg-white/10 backdrop-blur-md backdrop-saturate-150 z-20 border-b border-zinc-200/30'
+        className='fixed top-0 left-0 right-0 bg-white/[0.03] backdrop-blur-[2px] backdrop-saturate-170 z-20 border-b border-zinc-200/20'
         style={{ 
-          WebkitBackdropFilter: "blur(12px) saturate(150%)",
-          backgroundColor: "rgba(255, 255, 255, 0.12)" 
+          WebkitBackdropFilter: "blur(2px) saturate(170%)",
+          backgroundColor: "rgba(255, 255, 255, 0.03)" 
         }}
       >
         <div className='max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center justify-between gap-4'>
