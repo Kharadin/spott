@@ -173,7 +173,8 @@ const Header = () => {
         </div>
 
         {/* Mobile Search and Locations - Below Header */}
-        <div className='md:hidden border-t px-3 py-2 bg-white/5 backdrop-blur-md'>
+         <div className='md:hidden border-t px-3 py-2 bg-white/[0.03] backdrop-blur-[2px]'>
+
           <SearchLocationBar />
         </div>
 
