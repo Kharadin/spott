@@ -44,6 +44,7 @@ export default function ExplorePage() {
       const data = await res.json();
       if (data.user) {
         setCurrentUser(data.user);
+
       }
     } catch (error) {
       console.error("Explore page failed to fetch user session:", error);
@@ -52,7 +53,7 @@ export default function ExplorePage() {
 
   const [activeLocation, setActiveLocation] = useState({
     city: "",
-    state: "Karnataka",
+    state: "Krasnodar Krai",
   });
 
   // 3. Fetch user data on component mount
@@ -99,8 +100,8 @@ export default function ExplorePage() {
     }
   );
 
-  const recommendedCity = "Gurgaon";
-  const recommendedState = "Haryana";
+  const recommendedCity = "Sochi";
+  const recommendedState = "Krasnodar Krai";
   const { data: recomLocationEvents, isLoading: loadingRecomLocation } = useConvexQuery(
     api.explore.getEventsByLocation,
     {

@@ -13,6 +13,7 @@ import { format } from 'date-fns'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { createLocationSlug } from '@/lib/location-utils'
 import { Button } from './ui/button'
+import { useAuth } from '@/app/context/AuthContext'
 
 const SearchLocationBar = () => {
  const router = useRouter()
@@ -22,9 +23,7 @@ const SearchLocationBar = () => {
  const [selectedState, setSelectedState] = useState("")
  const [selectedCity, setSelectedCity] = useState("")
  
- const {data: currentUser, isLoading} = useConvexQuery(
-   api.users.getById
- )
+ const { user, token, isLoading: authLoading } = useAuth();
  const {mutate: updateLocation} = useConvexMutation(
    api.users.completeOnboarding
  );
@@ -33,23 +32,24 @@ const SearchLocationBar = () => {
    searchQuery.trim().length >=2 ? {query: searchQuery, limit: 5} : "skip"
  )
 
- const indianStates = State.getStatesOfCountry("IN");
+ const russianStates = State.getStatesOfCountry("RU");
 
  const cities = useMemo(() => {
    if (!selectedState) return [];
-   const state = indianStates.find((s) => s.name === selectedState);
+   const state = russianStates.find((s) => s.name === selectedState);
    if (!state) return [];
-   return City.getCitiesOfState("IN", state.isoCode); 
- }, [selectedState, indianStates]);
+   return City.getCitiesOfState("RU", state.isoCode); 
+ }, [selectedState, russianStates]);
 
  // Synchronize select values on mount using DB data OR browser storage if guest
  useEffect(() => {
-   if (!isLoading) {
-     if (currentUser?.location) {
-       setSelectedState(currentUser.location.state || "");
-       setSelectedCity(currentUser.location.city || "");
+   if (!authLoading) {
+     if (user?.location) {
+       setSelectedState(user.location.state || "");
+       setSelectedCity(user.location.city || "");
      } else {
        // --- GUEST BACK NAVIGATION CACHE READING ---
+       
        const savedState = localStorage.getItem("guest_state");
        const savedCity = localStorage.getItem("guest_city");
        
@@ -57,7 +57,7 @@ const SearchLocationBar = () => {
        if (savedCity) setSelectedCity(savedCity);
      }
    }
- }, [currentUser, isLoading])
+ }, [user, authLoading])
 
  const debouncedSetQuery = useRef(
    debounce((value) => setSearchQuery(value), 300) 
@@ -87,21 +87,24 @@ const SearchLocationBar = () => {
 
  const handleLocationSelect = async (city, state) => {
    console.log("handleLocationSelect");
+   console.log("user", user);
    console.log(city, state);
    try {
-     if (currentUser?.interests && currentUser?.location) {
+     if (user) {
        // --- AUTHENTICATED USER DB WRITING ---
        if (!city) {
          console.log("updating only state");
          await updateLocation({
-           location: {city: null, state, country: "India"},
-           interests: currentUser.interests 
+           token,
+           location: {city: null, state, country: "Russia"},
+           interests: user.interests ?? []
          })
        } else {
          console.log("updating both state and city");
          await updateLocation({
-           location: {city, state, country: "India"},
-           interests: currentUser.interests
+           token,
+           location: {city, state, country: "Russia"},
+           interests: user.interests ?? []
          });
        }
      } else {
@@ -131,7 +134,7 @@ const SearchLocationBar = () => {
      <div className='flex-1'>
        <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 '/>
        <Input 
-         placeholder="by title" 
+         placeholder="По названию" 
          onFocus={() => {
            if (searchQuery.length >= 2) setShowSearchResults(true)
          }}
@@ -201,11 +204,11 @@ const SearchLocationBar = () => {
         }}
     >
         <SelectTrigger className="w-32 h-9 border-l-0 rounded-none data-[placeholder]:text-slate-300 [&>svg]:!text-slate-300 [&>svg]:!opacity-70">
-        <SelectValue placeholder="State" />
+        <SelectValue placeholder="Обл." />
         </SelectTrigger>
         
         <SelectContent>
-        {indianStates.map((state) => (
+        {russianStates.map((state) => (
             <SelectItem 
             key={state.isoCode} 
             value={state.name}
@@ -243,7 +246,7 @@ const SearchLocationBar = () => {
          : "data-[placeholder]:text-slate-300 [&>svg]:text-slate-300"
        }`}
      >
-       <SelectValue placeholder="City"/>
+       <SelectValue placeholder="Город"/>
      </SelectTrigger>
      
      <SelectContent>

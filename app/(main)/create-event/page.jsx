@@ -162,7 +162,7 @@ const coverImage = watch("coverImage");
   // const indianStates = useMemo(() => {
   //   return State.getStatesOfCountry("IN");
   // }, []);
-  const indianStates= State.getStatesOfCountry("IN");
+  const indianStates= State.getStatesOfCountry("RU");
 
   // Get cities based on selected state
   const cities = useMemo(() => {
@@ -170,7 +170,7 @@ const coverImage = watch("coverImage");
     const st = indianStates.find((s) => s.name === selectedState);
     
     if (!st) return [];
-    return City.getCitiesOfState("IN", st.isoCode);
+    return City.getCitiesOfState("RU", st.isoCode);
   }, [selectedState, indianStates]);
   
   // Color presets - show all for Pro, only default for Free (now all)
@@ -229,7 +229,7 @@ const coverImage = watch("coverImage");
           address: data.address || undefined,
           city: data.city,
           state: data.state || undefined,
-          country: "India", 
+          country: "Russia", 
           ticketType: data.ticketType,
 
           capacity: data.capacity,

@@ -81,8 +81,9 @@ export const getById = query({
   handler: async (ctx, args) => {
     if (!args.id) { return null; }
     // Safely cast string back into a strict Convex ID object
+    console.log("args.id", args.id);
     const normalizedId = ctx.db.normalizeId("users", args.id);
-    
+    console.log("normalizedId", normalizedId);
     if (!normalizedId) {
       return null;
     }

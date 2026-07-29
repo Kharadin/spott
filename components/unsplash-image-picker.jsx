@@ -16,7 +16,7 @@ import { useMutation, useConvex } from "convex/react" // ADD: useConvexClient
 import { api } from "@/convex/_generated/api"
 
 export default function UniversalImagePicker({ isOpen, onClose, onSelect }) {
-    const [activeTab, setActiveTab] = useState("unsplash")
+    const [activeTab, setActiveTab] = useState("upload")
     const [query, setQuery] = useState('event')
     const [images, setImages] = useState([])
     const [loading, setLoading] = useState(false)
@@ -27,24 +27,24 @@ export default function UniversalImagePicker({ isOpen, onClose, onSelect }) {
     const convexClient = useConvex() // Gives us access to run queries directly inside functions
 
     // --- Flow 1: Unsplash Search Handler ---
-    const searchImages = async (searchQuery) => {
-        setLoading(true)
-        try {
+    // const searchImages = async (searchQuery) => {
+    //     setLoading(true)
+    //     try {
 
-            const response = await fetch(`https://api.unsplash.com/search/photos?query=${searchQuery}&per_page=12&client_id=${process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY}`)
-            const data = await response.json()
-            setImages(data.results || [])    
-        } catch (error) {
-            console.error("Error fetching images:", error)
-        } finally {
-            setLoading(false)
-        }
-    }
+    //         const response = await fetch(`https://api.unsplash.com/search/photos?query=${searchQuery}&per_page=12&client_id=${process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY}`)
+    //         const data = await response.json()
+    //         setImages(data.results || [])    
+    //     } catch (error) {
+    //         console.error("Error fetching images:", error)
+    //     } finally {
+    //         setLoading(false)
+    //     }
+    // }
     
-    const handleSearch = (e) => {
-        e.preventDefault()
-        searchImages(query)
-    }
+    // const handleSearch = (e) => {
+    //     e.preventDefault()
+    //     searchImages(query)
+    // }
 
     // --- Flow 2: Custom User Local File Upload ---
     const handleFileUpload = async (e) => {
@@ -94,16 +94,16 @@ export default function UniversalImagePicker({ isOpen, onClose, onSelect }) {
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex-1 flex flex-col overflow-hidden">
             <TabsList className="grid w-full grid-cols-2 max-w-sm mb-4">
-              <TabsTrigger value="unsplash" className="flex gap-2">
+              {/* <TabsTrigger value="unsplash" className="flex gap-2">
                 <Search className="w-4 h-4" /> Unsplash Stock
-              </TabsTrigger>
+              </TabsTrigger> */}
               <TabsTrigger value="upload" className="flex gap-2">
                 <Upload className="w-4 h-4" /> Upload Custom
               </TabsTrigger>
             </TabsList>
 
             {/* TAB CONTENT: UNSPLASH ENGINE */}
-            <TabsContent value="unsplash" className="flex-1 flex flex-col overflow-hidden gap-4 data-[state=inactive]:hidden">
+            {/* <TabsContent value="unsplash" className="flex-1 flex flex-col overflow-hidden gap-4 data-[state=inactive]:hidden">
               <form onSubmit={handleSearch} className="flex gap-2 text-slate-600">
                 <Input 
                     value={query} 
@@ -152,7 +152,7 @@ export default function UniversalImagePicker({ isOpen, onClose, onSelect }) {
               <p className="text-xs text-slate-400 mt-2">
                 Photos from <a href="https://unsplash.com" target="_blank" rel="noopener noreferrer" className="underline">Unsplash</a>
               </p>
-            </TabsContent>
+            </TabsContent> */}
 
             {/* TAB CONTENT: CONVEX FILE UPLOAD CONTAINER */}
             <TabsContent value="upload" className="flex-1 flex flex-col justify-center items-center data-[state=inactive]:hidden border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-12 bg-zinc-50/50 dark:bg-zinc-900/20">
