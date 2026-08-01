@@ -100,7 +100,7 @@ export default function ExplorePage() {
     }
   );
 
-  const recommendedCity = "Sochi";
+  const recommendedCity = "";
   const recommendedState = "Krasnodar Krai";
   const { data: recomLocationEvents, isLoading: loadingRecomLocation } = useConvexQuery(
     api.explore.getEventsByLocation,
