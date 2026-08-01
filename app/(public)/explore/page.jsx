@@ -260,13 +260,13 @@ export default function ExplorePage() {
         <div className='mb-16 '>
           <div className="mb-4">
             <h2 className="text-3xl font-bold mb-1">
-              Events by location:
+              Мероприятия по локации:
             </h2>
 
             {/* Narrow screen row-collapse container fixes */}
             <div className="flex flex-col min-[460px]:flex-row min-[460px]:items-center min-[460px]:justify-between gap-4">
               <p className="text-muted-foreground whitespace-normal">
-                {`Nearest in :  `}
+                {`Ближе к:  `}
                 <span className="font-semibold text-slate-200 block sm:inline">
                   {activeLocation.city ? `${activeLocation.city}, ` : ""}{activeLocation.state}
                 </span>
@@ -295,12 +295,12 @@ export default function ExplorePage() {
               </div>
             </div>
 
-            <p className="mt-2 text-md text-slate-400">Select your state and town in the panel on top</p>
+            <p className="mt-2 text-md text-slate-400">Выберете область и город в панели вверху</p>
           </div>
 
           {/* Display "No Events" if there are no local events */}
           {!localEvents.length ? (
-            <div className="h-4 flex items-center justify-center text-2xl">No events found</div>
+            <div className="h-4 flex items-center justify-center text-2xl">Мероприятий не найдено</div>
           ) :
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {localEvents.map((event) => (
@@ -324,13 +324,13 @@ export default function ExplorePage() {
         <div className='mb-16 '>
           <div className="mb-4">
             <h2 className="text-3xl font-bold mb-1">
-              Events in recommended location:
+              Мероприятия в рекомендованной локации:
             </h2>
 
             {/* Narrow screen row-collapse container fixes */}
             <div className="flex flex-col min-[460px]:flex-row min-[460px]:items-center min-[460px]:justify-between gap-4">
               <p className="text-muted-foreground whitespace-normal">
-                {`Nearest in :  `}
+                {`Ближе к:  `}
                 <span className="font-semibold text-slate-200 block sm:inline">
                   {recommendedCity ? `${recommendedCity}, ` : ""}{recommendedState}
                 </span>
@@ -361,7 +361,7 @@ export default function ExplorePage() {
           </div>
           {/* Display "No Events" if there are no local events */}
           {!recomLocationEvents.length ? (
-            <div className="h-4 flex items-center justify-center text-2xl">No recommended location events found</div>
+            <div className="h-4 flex items-center justify-center text-2xl">Не найдено мероприятий в рекомендованной локации</div>
           ) :
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {recomLocationEvents.map((event) => (
