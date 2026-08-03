@@ -10,7 +10,7 @@ export default function PricingModal({ isOpen, onClose, trigger = 'limit' }) {
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isMoreInfoModalOpen, setIsMoreInfoModalOpen] = useState(false); // <--- New State
   const [copied, setCopied] = useState(false);
-  const supportEmail = "support@yourdomain.com";
+  const supportEmail = "dmitry.kharadin@gmail.com";
 
   const handleCopyEmail = async () => {
     try {
