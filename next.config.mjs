@@ -27,6 +27,11 @@ const nextConfig = {
         hostname: 'proxy.bereg-go.ru',
         pathname: '/event-images/**', // <--- Matches your loader output
       },
+      {
+        protocol: 'https',
+        hostname: 'proxy.bereg-go.ru',
+        pathname: '/unsplash/**', // 👈 MAKE SURE THIS IS PRESENT
+      },
     ],
     unoptimized: false
   },
