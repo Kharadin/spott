@@ -9,13 +9,13 @@ export const setMonthsToAugust = internalMutation({
 
       if (doc.startDate !== undefined) {
         const date = new Date(doc.startDate);
-        date.setMonth(7); // Aug (0-indexed)
+        date.setMonth(8); // Aug (0-indexed)
         updatedFields.startDate = date.getTime();
       }
 
       if (doc.endDate !== undefined) {
         const date = new Date(doc.endDate);
-        date.setMonth(7);
+        date.setMonth(8);
         updatedFields.endDate = date.getTime();
       }
 
