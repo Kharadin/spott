@@ -4,7 +4,7 @@ export default function customImageLoader({ src, width, quality }) {
   // 1. CONVEX MATCHING & REWRITE
   if (src && src.includes('/api/storage/')) {
     const storageId = src.split('/api/storage/').pop().split('?')[0];
-    return `https://bereg-go.ru{storageId}`;
+    return `https://proxy.bereg-go.ru/event-images/${storageId}`;
   }
   
   // 2. UNSPLASH MATCHING & REWRITE
